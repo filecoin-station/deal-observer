@@ -1,0 +1,25 @@
+{
+  "name": "@filecoin-station/deal-observer",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/filecoin-station/piece-indexer.git"
+  },
+  "author": "Miroslav Bajtoš <oss@bajtos.net>",
+  "license": "(Apache-2.0 AND MIT)",
+  "bugs": {
+    "url": "https://github.com/filecoin-station/piece-indexer/issues"
+  },
+  "homepage": "https://github.com/filecoin-station/piece-indexer#readme",
+  "devDependencies": {
+    "prettier": "^3.3.2"
+  }
+}
