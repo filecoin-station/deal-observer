@@ -3,6 +3,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "migrate": "node ../db/bin/migrate.js",
     "start": "node bin/deal-observer-backend.js",
     "lint": "standard",
     "test": "node --test --test-reporter=spec"
