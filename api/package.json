@@ -1,0 +1,22 @@
+{
+  "name": "@filecoin-station/deal-observer-api",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node bin/deal-observer-api.js",
+    "lint": "standard",
+    "test": "node --test --test-reporter=spec"
+  },
+  "devDependencies": {
+    "standard": "^17.1.2"
+  },
+  "dependencies": {
+    "@filecoin-station/deal-observer-db": "^1.0.0",
+    "@sentry/node": "^8.48.0",
+    "@sentry/profiling-node": "^8.48.0",
+    "debug": "^4.4.0",
+    "http-assert": "^1.5.0",
+    "http-responders": "^2.1.0",
+    "pg": "^8.13.1"
+  }
+}

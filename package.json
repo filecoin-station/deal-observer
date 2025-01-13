@@ -1,25 +1,36 @@
 {
-  "name": "@filecoin-station/deal-observer",
+  "name": "@filecoin-station/deal-observer-monorepo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "main": "index.js",
+  "workspaces": [
+    "api",
+    "backend",
+    "db"
+  ],
   "scripts": {
-    "lint": "prettier --check .",
-    "lint:fix": "prettier --write .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "migrate": "npm run migrate -w db",
+    "lint": "prettier --check . && standard",
+    "lint:fix": "prettier --write . && standard --fix .",
+    "test:types": "tsc -p .",
+    "test:unit": "npm test --workspaces --if-present",
+    "test": "npm run lint && npm run test:types && npm run test:unit"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/filecoin-station/piece-indexer.git"
+    "url": "git+ssh://git@github.com/filecoin-station/deal-observer.git"
   },
-  "author": "Miroslav Bajtoš <oss@bajtos.net>",
+  "author": "Space Meridian <spark@meridian.space>",
   "license": "(Apache-2.0 AND MIT)",
   "bugs": {
-    "url": "https://github.com/filecoin-station/piece-indexer/issues"
+    "url": "https://github.com/filecoin-station/deal-observer/issues"
   },
-  "homepage": "https://github.com/filecoin-station/piece-indexer#readme",
+  "homepage": "https://github.com/filecoin-station/deal-observer#readme",
   "devDependencies": {
-    "prettier": "^3.3.2"
+    "@types/mocha": "^10.0.10",
+    "@types/pg": "^8.11.10",
+    "prettier": "^3.3.2",
+    "standard": "^17.1.2",
+    "typescript": "^5.7.3"
   }
 }
