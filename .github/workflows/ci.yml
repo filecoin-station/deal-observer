@@ -34,7 +34,7 @@ jobs:
       - run: npm run migrate
       - run: npm test
 
-  build-observer:
+  build-backend:
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -52,7 +52,7 @@ jobs:
           --health-retries 5
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/spark_deal_observer
-      NPM_CONFIG_WORKSPACE: observer
+      NPM_CONFIG_WORKSPACE: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -98,7 +98,7 @@ jobs:
 
   deploy-api:
     if: github.ref == 'refs/heads/main'
-    needs: [build-api, build-observer, docker-build]
+    needs: [build-api, build-backend, docker-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -126,14 +126,14 @@ jobs:
               ]
             }
 
-  deploy-observer:
+  deploy-backend:
     if: github.ref == 'refs/heads/main'
-    needs: [build-api, build-observer, docker-build]
+    needs: [build-api, build-backend, docker-build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: superfly/flyctl-actions/setup-flyctl@master
-      - run: flyctl deploy --remote-only -c observer/fly.toml
+      - run: flyctl deploy --remote-only -c backend/fly.toml
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_TOKEN_BACKEND }}
       - if: failure()
