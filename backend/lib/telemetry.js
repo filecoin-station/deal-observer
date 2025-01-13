@@ -1,17 +1,17 @@
 import { InfluxDB, Point } from '@influxdata/influxdb-client'
 import createDebug from 'debug'
 
-const debug = createDebug('spark:observer:telemetry')
+const debug = createDebug('spark:deal-observer:telemetry')
 
 export const createInflux = token => {
   const influx = new InfluxDB({
     url: 'https://eu-central-1-1.aws.cloud2.influxdata.com',
-    // bucket permissions: spark-evaluate:read spark-observer:write
+    // bucket permissions: deal-observer:write
     token
   })
   const writeClient = influx.getWriteApi(
     'Filecoin Station', // org
-    'spark-observer', // bucket
+    'deal-observer', // bucket
     'ms' // precision
   )
   setInterval(() => {
