@@ -41,16 +41,13 @@ const onError = err => {
  * @returns {Promise<PgPool>}
  */
 export const createPgPool = async () => {
-  const stats = Object.assign(
-    new pg.Pool({
-      ...poolConfig,
-      connectionString: DATABASE_URL
-    }),
-    /** @type {const} */({ db: 'stats' })
-  )
-  stats.on('error', onError)
-  await stats.query('SELECT 1')
-  return stats
+  const pool = new pg.Pool({
+    ...poolConfig,
+    connectionString: DATABASE_URL
+  })
+  pool.on('error', onError)
+  await pool.query('SELECT 1')
+  return pool
 }
 
 /**
