@@ -1,8 +1,6 @@
 # syntax = docker/dockerfile:1
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=20.8.1
-FROM node:${NODE_VERSION}-slim AS base
+FROM node:22.13.0-slim AS base
 
 LABEL fly_launch_runtime="nodejs"
 
@@ -31,7 +29,7 @@ COPY --link package-lock.json package.json ./
 # See https://docs.docker.com/reference/dockerfile/#copy---parents
 COPY --link api/package.json ./api/
 COPY --link db/package.json ./db/
-COPY --link observer/package.json ./observer/
+COPY --link backend/package.json ./backend/
 
 RUN npm ci --workspaces
 

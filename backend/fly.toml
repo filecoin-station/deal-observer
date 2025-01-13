@@ -1,14 +1,14 @@
-app = "spark-observer"
+app = "spark-observer-backend"
 primary_region = "cdg"
 
 [env]
-  SENTRY_ENVIRONMENT = "production"
-  NPM_CONFIG_WORKSPACE = "observer"
+SENTRY_ENVIRONMENT = "production"
+NPM_CONFIG_WORKSPACE = "backend"
 
 [deploy]
-  strategy = "rolling"
-  release_command = "npm run migrate --workspace db"
+strategy = "rolling"
+release_command = "npm run migrate --workspace db"
 
 [[restart]]
-  policy = "always"
-  retries = 10
+policy = "always"
+retries = 10
