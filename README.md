@@ -30,9 +30,13 @@ fly deploy -c backend/fly.toml
 ```
 
 ## Testing
-To run the tests for this repository you will first need to setup a postgreSQL database. 
 
-You can do this by running a postgreSQL docker container with the following command:
+To run the tests for this repository you will first need to setup a postgreSQL
+database.
+
+You can do this by running a postgreSQL docker container with the following
+command:
+
 ```bash
 docker run -d --name spark-db \
 -e POSTGRES_HOST_AUTH_METHOD=trust \
@@ -42,12 +46,15 @@ docker run -d --name spark-db \
 postgres
 ```
 
-Afterwards, you need to create the database `spark_deal_observer` by running the following command:
+Afterwards, you need to create the database `spark_deal_observer` by running the
+following command:
+
 ```bash
 psql postgres://$USER@localhost/$USER -c 'CREATE DATABASE spark_deal_observer'
 ```
 
 Finally, you can run the tests:
+
 ```
 npm test
 ```
