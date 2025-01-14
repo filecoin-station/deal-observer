@@ -1,0 +1,14 @@
+app = "deal-observer-backend"
+primary_region = "cdg"
+
+[env]
+SENTRY_ENVIRONMENT = "production"
+NPM_CONFIG_WORKSPACE = "backend"
+
+[deploy]
+strategy = "rolling"
+release_command = "npm run migrate --workspace db"
+
+[[restart]]
+policy = "always"
+retries = 10
