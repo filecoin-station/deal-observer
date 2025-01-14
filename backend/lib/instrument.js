@@ -17,8 +17,7 @@ const pkg = JSON.parse(
 )
 
 Sentry.init({
-  // FIXME
-  // dsn: 'https://47b65848a6171ecd8bf9f5395a782b3f@o1408530.ingest.sentry.io/4506576125427712',
+  dsn: 'https://5266526aa110fd4e4bfe2aa08eb7a3e2@o1408530.ingest.us.sentry.io/4508641125138432',
   release: pkg.version,
   environment: SENTRY_ENVIRONMENT,
   tracesSampleRate: 0.1
