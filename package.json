@@ -29,11 +29,11 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/pg": "^8.11.10",
-    "prettier": "^3.3.2",
+    "prettier": "^3.4.2",
     "standard": "^17.1.2",
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "ipld-schema-describer": "^3.0.13"
+    "@ipld/schema": "^6.0.5"
   }
 }

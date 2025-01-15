@@ -2,12 +2,12 @@ type ClaimEvent struct {
   id Int
   client Int
   provider Int
-  pieceCid optional &Any # TODO: remove optional, required for pre-nv22-fix on calibnet
-  pieceSize optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termMin optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termMax optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termStart optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  sector optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
+  pieceCid &Any 
+  pieceSize Int 
+  termMin Int 
+  termMax Int 
+  termStart Int 
+  sector Int 
 }
 
 # | flags             | key             | value                         |
@@ -22,3 +22,17 @@ type ClaimEvent struct {
 # | Index Key         | "term-max"      | <TERM_MAXIMUM> (int)          |
 # | Index Key         | "term-start"    | <TERM_START> (int)            |
 # | Index Key + Value | "sector"        | <SECTOR_ID> (int)             |
+
+type Entry struct {
+    Codec Int
+    Flags Int
+    Key String
+    Value String
+}
+
+type RawActorEvent struct {
+    emitter String
+    entries [Entry]
+    height Int
+    reverted Bool
+}
