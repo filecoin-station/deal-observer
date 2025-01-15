@@ -2,12 +2,12 @@ type ClaimEvent struct {
   id Int
   client Int
   provider Int
-  pieceCid optional &Any # TODO: remove optional, required for pre-nv22-fix on calibnet
-  pieceSize optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termMin optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termMax optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  termStart optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
-  sector optional Int # TODO: remove optional, required for pre-nv22-fix on calibnet
+  pieceCid &Any 
+  pieceSize Int 
+  termMin Int 
+  termMax Int 
+  termStart Int 
+  sector Int 
 }
 
 # | flags             | key             | value                         |
