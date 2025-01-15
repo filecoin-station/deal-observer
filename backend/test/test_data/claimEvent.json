@@ -2,9 +2,7 @@
     "id": 87871691,
     "client": 3297188,
     "provider": 3254061,
-    "pieceCid": {
-        "/": "baga6ea4seaqm3i2rjffnsz55jvzod52yprjmxco3x2wzjocjxmqc7y7q3nxrena"
-    },
+    "pieceCid": {"/":"baga6ea4seaqk5bmtyfomjprov2jjtto7ffhxuusfouhn3fdu7l6gl6yemhzocoi"},
     "pieceSize": 34359738368,
     "termMin": 1008000,
     "termMax": 1267200,

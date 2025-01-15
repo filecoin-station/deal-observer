@@ -35,4 +35,6 @@ type RawActorEvent struct {
     entries [Entry]
     height Int
     reverted Bool
+    msgCid &Any
+    tipsetKey [&Any]
 }

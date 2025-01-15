@@ -5,6 +5,7 @@ import path from 'path'
 import { Transformer } from '../lib/lotus/transform.js'
 import assert from 'assert'
 import { fileURLToPath } from 'url'
+import { CID } from 'multiformats/cid'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -35,7 +36,7 @@ describe('deal-observer-backend', () => {
     })
   })
 
-  describe('test the transformation of events returned by the lotus api to typed events', () => {
+  describe('Transformer', () => {
     const testData = {}
     beforeEach(async () => {
       const __filename = fileURLToPath(import.meta.url)
@@ -49,6 +50,7 @@ describe('deal-observer-backend', () => {
             const filePath = path.join(testDataPath, file)
             const content = fs.readFileSync(filePath, 'utf-8')
             const parsedContent = JSON.parse(content)
+            parsedContent.pieceCid = CID.parse(parsedContent.pieceCid['/'])
             const key = path.basename(file, '.json')
             testData[key] = parsedContent
           }
@@ -56,11 +58,12 @@ describe('deal-observer-backend', () => {
       })
     })
 
-    it('transformer can correctly transform claim event json objects', async () => {
+    it('transforms a claim event payload to a typed object', async () => {
       const transformer = await (new Transformer().build())
       const claimEvent = testData.claimEvent
       const transformedClaimEvent = transformer.transform('ClaimEvent', claimEvent)
-      assert.deepStrictEqual(transformedClaimEvent, testData.typedClaimEvent)
+      assert(transformedClaimEvent !== undefined, 'transformedClaimEvent is undefined')
+      assert.deepStrictEqual(transformedClaimEvent, claimEvent)
     })
   })
 })

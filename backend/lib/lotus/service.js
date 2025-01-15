@@ -45,11 +45,7 @@ class LotusService {
     // TODO: Handle multiple events, currently we are expecting a single event to exist in the filter
     const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
     const typedRawEventEntries = rawEvents.map((rawEvent) => this.#transformer.transform(
-      'RawActorEvent', { 
-      emitter: rawEvent.emitter, 
-      entries: rawEvent.entries, 
-      height: rawEvent.height, 
-      reverted: rawEvent.reverted }
+      'RawActorEvent', rawEvent
     ))
     // An emitted event contains the height at which it was emitted, the emitter and the event itself
     const emittedEvents = new Set()
