@@ -1,13 +1,11 @@
-import { EVENT_TYPES, GLIF_RPC } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode, decode as cborDecode } from '@ipld/dag-cbor'
-import { decode as jsonDecode, encode as jsonEncode } from '@ipld/dag-json'
-import { request } from 'undici'
 import { readFile } from 'node:fs/promises'
 import { fromDSL } from '@ipld/schema/from-dsl.js'
 import { create } from '@ipld/schema/typed.js'
 
 class Transformer {
+  // A transformer which takes in a json object and returns a typed ClaimEvent object
   #claimEventTransformer
 
   async build () {
