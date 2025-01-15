@@ -32,5 +32,8 @@
     "prettier": "^3.3.2",
     "standard": "^17.1.2",
     "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "ipld-schema-describer": "^3.0.13"
   }
 }
