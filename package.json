@@ -34,7 +34,6 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@ipld/dag-cbor": "^9.2.2",
     "@ipld/schema": "^6.0.5",
     "multiformats": "^13.3.1"
   }
