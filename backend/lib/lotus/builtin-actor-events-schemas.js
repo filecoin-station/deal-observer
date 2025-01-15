@@ -1,3 +1,5 @@
+import { fromDSL } from '@ipld/schema/from-dsl.js'
+const schemaDmt = fromDSL(`
 type ClaimEvent struct {
   id Int
   client Int
@@ -22,3 +24,6 @@ type ClaimEvent struct {
 # | Index Key         | "term-max"      | <TERM_MAXIMUM> (int)          |
 # | Index Key         | "term-start"    | <TERM_START> (int)            |
 # | Index Key + Value | "sector"        | <SECTOR_ID> (int)             |
+`)
+
+export { schemaDmt }

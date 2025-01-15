@@ -73,6 +73,21 @@ jobs:
       - run: npm run lint
       - run: npm run test:types
 
+  validate-ipld-schema:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install IPLD Schema Validator
+        run: npm ci
+
+      - name: Validate IPLD Schema
+        run: ipld-schema validate ./backend/lib/lotus/builtin-actor-events-schemas.ipldsch 
+
   docker-build:
     runs-on: ubuntu-latest
     permissions:
