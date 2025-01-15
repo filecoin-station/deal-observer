@@ -14,7 +14,7 @@ class Transformer {
     const schemaDsl = await readFile(schemaPath, 'utf8')
     // TODO: Catch and log errors
     const schemaDmt = fromDSL(schemaDsl)
-    
+
     // TODO: Catch and log errors
     this.#claimEventTransformer = this.#createTransformer(schemaDmt, 'ClaimEvent')
     return this
