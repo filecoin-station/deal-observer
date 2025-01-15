@@ -4,7 +4,7 @@ import { ethers } from 'ethers'
 import assert from 'node:assert/strict'
 import timers from 'node:timers/promises'
 import slug from 'slug'
-import { GLIF_RPC, rpcHeaders } from '../lib/config.js'
+import { RPC_URL, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
 import {
   observeBuiltinActorEvents
@@ -16,7 +16,7 @@ assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
 
 const pgPool = await createPgPool()
 
-const fetchRequest = new ethers.FetchRequest(GLIF_RPC)
+const fetchRequest = new ethers.FetchRequest(RPC_URL)
 fetchRequest.setHeader('Authorization', rpcHeaders.Authorization || '')
 const provider = new ethers.JsonRpcProvider(fetchRequest, null, { polling: true })
 
@@ -52,4 +52,3 @@ await Promise.all([
     30_000
   )
 ])
-

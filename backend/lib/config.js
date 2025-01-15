@@ -1,18 +1,18 @@
 const {
-  RPC_URLS = 'https://api.node.glif.io/rpc/v1',
+  RPC_URLS = 'https://api.node.glif.io/rpc/v0',
   GLIF_TOKEN
 } = process.env
 
 const rpcUrls = RPC_URLS.split(',')
-const GLIF_RPC = rpcUrls[Math.floor(Math.random() * rpcUrls.length)]
-console.log(`Selected JSON-RPC endpoint ${GLIF_RPC}`)
+const RPC_URL = rpcUrls[Math.floor(Math.random() * rpcUrls.length)]
+console.log(`Selected JSON-RPC endpoint ${RPC_URL}`)
 
 const rpcHeaders = {}
-if (GLIF_RPC.includes('glif')) {
+if (RPC_URL.includes('glif')) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
 }
 
 export {
-  GLIF_RPC,
-  rpcHeaders,
+  RPC_URL,
+  rpcHeaders
 }
