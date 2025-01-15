@@ -19,6 +19,7 @@ jobs:
           - postgrator
           - '@types/'
           - standard
+          - prettier
     steps:
       - name: Dependabot metadata
         id: metadata
