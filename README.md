@@ -31,10 +31,10 @@ fly deploy -c backend/fly.toml
 
 ## Testing
 
-To run the tests for this repository you will first need to setup a postgreSQL
+To run the tests for this repository you will first need to setup a PostgreSQL
 database.
 
-You can do this by running a postgreSQL docker container with the following
+You can do this by running a PostgreSQL docker container with the following
 command:
 
 ```bash
