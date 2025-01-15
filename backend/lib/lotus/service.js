@@ -27,7 +27,6 @@ class LotusService {
 
   async #make_rpc_request (method, params) {
     const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-    console.log("Request body: ", JSON.stringify(reqBody))
     const { body } = await request(this.#lotusHttpRpcURL, {
       bodyTimeout: 1000 * 60,
       headersTimeout: 1000 * 60,
@@ -35,9 +34,7 @@ class LotusService {
       headers: { 'content-type': 'application/json' },
       body: reqBody
     })
-    console.log("Body: ", JSON.stringify(body))
     const rawBody = await body.arrayBuffer()
-    console.log("Raw body: ", JSON.stringify(rawBody))
     return jsonDecode(new Uint8Array(rawBody)).result
   }
 
