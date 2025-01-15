@@ -7,7 +7,7 @@ import path from 'path'
 import { Transformer } from '../lib/lotus/transform.js'
 import assert from 'assert'
 import { fileURLToPath } from 'url'
-import { CID } from 'multiformats/cid';
+import { CID } from 'multiformats/cid'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -52,7 +52,7 @@ describe('deal-observer-backend', () => {
           if (path.extname(file) === '.json') {
             const filePath = path.join(testDataPath, file)
             const content = fs.readFileSync(filePath, 'utf-8')
-            let parsedContent = JSON.parse(content)
+            const parsedContent = JSON.parse(content)
             parsedContent.pieceCid = CID.parse(parsedContent.pieceCid['/'])
             const key = path.basename(file, '.json')
             testData[key] = parsedContent
