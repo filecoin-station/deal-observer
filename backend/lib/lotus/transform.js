@@ -1,6 +1,5 @@
-import { readFile } from 'node:fs/promises'
-import { fromDSL } from '@ipld/schema/from-dsl.js'
 import { create } from '@ipld/schema/typed.js'
+import { schemaDmt } from './builtin-actor-events-schemas.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode, decode as cborDecode } from '@ipld/dag-cbor'
 
@@ -10,19 +9,13 @@ class Transformer {
   #rawActorEventTransformer
 
   async build () {
-    const schemaPath = new URL('../lotus/builtin-actor-events-schemas.ipldsch', import.meta.url)
     // TODO: Catch and log errors
-    const schemaDsl = await readFile(schemaPath, 'utf8')
-    // TODO: Catch and log errors
-    const schemaDmt = fromDSL(schemaDsl)
-
-    // TODO: Catch and log errors
-    this.#claimEventTransformer = this.#createTransformer(schemaDmt, 'ClaimEvent')
-    this.#rawActorEventTransformer = this.#createTransformer(schemaDmt, 'RawActorEvent')
+    this.#claimEventTransformer = this.#createTransformer('ClaimEvent')
+    this.#rawActorEventTransformer = this.#createTransformer('RawActorEvent')
     return this
   }
 
-  #createTransformer (schemaDmt, name) {
+  #createTransformer (name) {
     // TODO: Catch and log errors
     return create(schemaDmt, name)
   }

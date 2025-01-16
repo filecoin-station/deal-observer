@@ -1,12 +1,11 @@
-import { after, before, beforeEach, describe, it } from 'node:test'
+import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import fs from 'fs'
-import path from 'path'
 import { Transformer } from '../lib/lotus/transform.js'
 import assert from 'assert'
-import { fileURLToPath } from 'url'
-import { CID } from 'multiformats/cid'
-
+import { claimTestEvent } from './test_data/claimEvent.js'
+import { LotusService } from '../lib/lotus/service.js'
+import { GLIF_RPC } from '../lib/config.js'
+import { startServer,testServerURL } from './mockServer.js'
 describe('deal-observer-backend', () => {
   let pgPool
 
@@ -37,33 +36,31 @@ describe('deal-observer-backend', () => {
   })
 
   describe('Transformer', () => {
-    const testData = {}
-    beforeEach(async () => {
-      const __filename = fileURLToPath(import.meta.url)
-      const __dirname = path.dirname(__filename)
-
-      const testDataPath = path.join(__dirname, 'test_data')
-      // Read all files in the test_data directory
-      fs.readdir(testDataPath, (_, files) => {
-        files.forEach((file) => {
-          if (path.extname(file) === '.json') {
-            const filePath = path.join(testDataPath, file)
-            const content = fs.readFileSync(filePath, 'utf-8')
-            const parsedContent = JSON.parse(content)
-            parsedContent.pieceCid = CID.parse(parsedContent.pieceCid['/'])
-            const key = path.basename(file, '.json')
-            testData[key] = parsedContent
-          }
-        })
-      })
-    })
-
     it('transforms a claim event payload to a typed object', async () => {
       const transformer = await (new Transformer().build())
-      const claimEvent = testData.claimEvent
-      const transformedClaimEvent = transformer.transform('ClaimEvent', claimEvent)
+      const transformedClaimEvent = transformer.transform('ClaimEvent', claimTestEvent)
       assert(transformedClaimEvent !== undefined, 'transformedClaimEvent is undefined')
-      assert.deepStrictEqual(transformedClaimEvent, claimEvent)
+      assert.deepStrictEqual(transformedClaimEvent, claimTestEvent)
+    })
+  })
+
+  describe('LotusService', () => {
+    let lotusService
+    let server 
+    before(async () => {
+      server = await startServer()
+      lotusService = await (new LotusService(testServerURL)).build()
+      }) 
+    after(async () => {
+      server.close();
+    })
+
+    it('test the retrieval of built in actor events', async () => {
+      console.log(await fetch('http://localhost:8080', {
+        method: 'GET',
+      }));
+      //let response = await lotusService.getChainHead()
+      //console.log(response)
     })
   })
 })

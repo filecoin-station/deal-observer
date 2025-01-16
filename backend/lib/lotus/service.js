@@ -4,6 +4,9 @@ import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
 import { request } from 'undici'
 import { decodeCborInBase64, Transformer } from './transform.js'
+import fs from 'fs'
+let counter = 0
+
 /*
  A class to interact with the Lotus HTTP RPC API.
 */
@@ -22,18 +25,16 @@ class LotusService {
     this.#transformer = await (new Transformer()).build()
     return this
   }
-
   async #make_rpc_request (method, params) {
     const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-    const { body } = await request(this.#lotusHttpRpcURL, {
+    const response = await request(this.#lotusHttpRpcURL, {
       bodyTimeout: 1000 * 60,
       headersTimeout: 1000 * 60,
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: reqBody
     })
-    const rawBody = await body.arrayBuffer()
-    return jsonDecode(new Uint8Array(rawBody)).result
+    return jsonDecode(new Uint8Array(await response.body.arrayBuffer())).result
   }
 
   /**
@@ -83,9 +84,8 @@ class LotusService {
   }
 }
 
-
 class ActorEventFilter {
-   /**
+  /**
    * @param {number} fromHeight
    * @param {number} toHeight
    * @param {string[]} eventTypes
@@ -108,7 +108,3 @@ export {
   ActorEventFilter,
   LotusService
 }
-
-(new LotusService(GLIF_RPC)).build().then((lotusService) => {
-  lotusService.getActorEvents(new ActorEventFilter(4620800, 4620803, EVENT_TYPES)).then((events) => { console.log(events) })
-})

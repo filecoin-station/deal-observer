@@ -1,3 +1,6 @@
+import { fromDSL } from '@ipld/schema/from-dsl.js'
+// TODO: Catch and log errors
+const schemaDmt = fromDSL(`
 type ClaimEvent struct {
   id Int
   client Int
@@ -37,4 +40,6 @@ type RawActorEvent struct {
     reverted Bool
     msgCid &Any
     tipsetKey [&Any]
-}
+}`)
+
+export { schemaDmt }
