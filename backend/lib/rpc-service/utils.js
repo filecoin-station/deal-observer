@@ -10,7 +10,7 @@ const encodeCborInBase64 = (data) => {
 }
 
 const rawEventEntriesToEvent = (rawEventEntries) => {
-  // Each event is defined by a list of even entries which will will transform into a typed event
+  // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}
   // TODO handle if there is no type entry
   let eventType

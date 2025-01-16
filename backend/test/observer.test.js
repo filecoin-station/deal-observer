@@ -1,9 +1,9 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema.js'
+import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema-validator.js'
 import assert from 'assert'
 import { claimTestEvent } from './test_data/claimEvent.js'
-import { ActorEventFilter, EventService } from '../lib/rpc-service/service.js'
+import { ActorEventFilter, RpcService } from '../lib/rpc-service/service.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parseCIDs } from './utils.js'
@@ -31,13 +31,13 @@ describe('deal-observer-backend', () => {
     })
   })
 
-  describe('Transformer', () => {
+  describe('IPLD Schema Validator', () => {
     let claimEvent
 
     before(() => {
       claimEvent = parseCIDs(claimTestEvent)
     })
-    it('transforms a claim event payload to a typed object', async () => {
+    it('validates and converts a claim event payload to a typed object', async () => {
       const ipldSchema = await (new IpldSchemaValidator().build())
       const typedClaimEvent = ipldSchema.applyType('ClaimEvent', claimEvent)
       assert(typedClaimEvent !== undefined, 'typedClaimEvent is undefined')
@@ -45,8 +45,8 @@ describe('deal-observer-backend', () => {
     })
   })
 
-  describe('EventService', () => {
-    let eventService
+  describe('RpcService', () => {
+    let rpcService
 
     before(async () => {
       const makeRpcRequest = async (method, params) => {
@@ -60,16 +60,16 @@ describe('deal-observer-backend', () => {
         }
       }
 
-      eventService = await (new EventService(makeRpcRequest)).build()
+      rpcService = await (new RpcService(makeRpcRequest)).build()
     })
     it('test the retrieval of the chainHead', async () => {
-      const chainHead = await eventService.getChainHead()
+      const chainHead = await rpcService.getChainHead()
       assert(chainHead)
       assert.deepStrictEqual(JSON.stringify(chainHead), JSON.stringify(chainHeadTestData))
     })
 
     it('test the retrieval of rawActorEvents', async () => {
-      const actorEvents = await eventService.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
+      const actorEvents = await rpcService.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
       assert(actorEvents)
       actorEvents.forEach(e => {
         assert(e.height >= 4622129 && e.height <= 4622139)

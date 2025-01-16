@@ -2,7 +2,7 @@ import { create } from '@ipld/schema/typed.js'
 import { schemaDmt } from './builtin-actor-events-schemas.js'
 
 class IpldSchemaValidator {
-  // A transformer which takes in a json object and returns a typed ClaimEvent object
+  // A validator which takes in a json object and returns a typed ClaimEvent object if the data matches the schema
   #claimEventSchema
   #rawActorEventSchema
 

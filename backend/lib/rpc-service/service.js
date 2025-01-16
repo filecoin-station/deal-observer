@@ -3,7 +3,7 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
 import { request } from 'undici'
-import { IpldSchemaValidator } from './ipld-schema.js'
+import { IpldSchemaValidator } from './ipld-schema-validator.js'
 import { rawEventEntriesToEvent } from './utils.js'
 
 const makeRpcRequest = async (method, params) => {
@@ -19,9 +19,9 @@ const makeRpcRequest = async (method, params) => {
 }
 
 /*
- A class to interact with the Lotus HTTP RPC API.
+ A class to interact with.
 */
-class EventService {
+class RpcService {
   #ipldSchema
   #make_rpc_request
 
@@ -87,5 +87,5 @@ class ActorEventFilter {
 
 export {
   ActorEventFilter,
-  EventService
+  RpcService
 }
