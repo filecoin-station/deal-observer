@@ -33,14 +33,14 @@ describe('deal-observer-backend', () => {
       await pgPool.query(`
        INSERT INTO active_deals (
          activated_at_epoch,
-         miner,
-         client,
+         miner_id,
+         client_id,
          piece_cid,
          piece_size,
          term_start_epoch,
          term_min,
          term_max,
-         sector
+         sector_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `, [
@@ -61,14 +61,14 @@ describe('deal-observer-backend', () => {
       const { rows: loaded } = await pgPool.query('SELECT * FROM active_deals')
       assert.deepStrictEqual(loaded, [{
         activated_at_epoch: 4131302,
-        miner: 3072985,
-        client: 3138382,
+        miner_id: 3072985,
+        client_id: 3138382,
         piece_cid: 'baga6ea4seaqeaboqmwmwm7i6nr5alwtdi6xy43p6iay2xs7qee5ghyakpwelofy',
         piece_size: 34359738368n,
         term_start_epoch: 4131302,
         term_min: 1051200,
         term_max: 5256000,
-        sector: 37710,
+        sector_id: 37710,
         payload_cid: null
       }])
 
