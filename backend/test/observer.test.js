@@ -70,24 +70,27 @@ describe('deal-observer-backend', () => {
 
     it('test the retrieval of rawActorEvents', async () => {
       const validator = await IpldSchemaValidator.create()
-      const actorEvents = await rpcApiClient.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
-      assert(actorEvents)
-      actorEvents.forEach(e => {
+      Array.from({ length: 11 }, (_, i) => 4622129 + i).flatMap(async (blockHeight) => {
+        const actorEvents = await rpcApiClient.getActorEvents(new ActorEventFilter(blockHeight, 'claim'))
+        assert(actorEvents)
+        actorEvents.forEach(e => {
         // Validate type
-        assert(validator.applyType('ClaimEvent', {
-          id: e.event.id,
-          client: e.event.client,
-          provider: e.event.provider,
-          pieceCid: e.event.pieceCid,
-          pieceSize: e.event.pieceSize,
-          termMin: e.event.termMin,
-          termMax: e.event.termMax,
-          termStart: e.event.termStart,
-          sector: e.event.sector
-        }), `Invalid claim event: ${JSON.stringify(e.event)}`)
+          assert(validator.applyType('ClaimEvent', {
+            id: e.event.id,
+            client: e.event.client,
+            provider: e.event.provider,
+            pieceCid: e.event.pieceCid,
+            pieceSize: e.event.pieceSize,
+            termMin: e.event.termMin,
+            termMax: e.event.termMax,
+            termStart: e.event.termStart,
+            sector: e.event.sector
+          }), `Invalid claim event: ${JSON.stringify(e.event)}`)
 
-        assert(e.height >= 4622129 && e.height <= 4622139)
-      })
+          assert(e.height >= 4622129 && e.height <= 4622139)
+        })
+      }
+      )
     })
   })
 })

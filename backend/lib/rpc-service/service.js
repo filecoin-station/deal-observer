@@ -72,20 +72,17 @@ class RpcApiClient {
 
 class ActorEventFilter {
   /**
-   * @param {number} fromHeight
-   * @param {number} toHeight
-   * @param {string[]} eventTypes
+   * @param {number} blockHeight
+   * @param {string} eventTypeString
    */
-  constructor (fromHeight, toHeight, eventTypes) {
-    this.fromHeight = fromHeight
-    this.toHeight = toHeight
+  constructor (blockHeight, eventTypeString) {
+    // We only search for events in a single block
+    this.fromHeight = blockHeight
+    this.toHeight = blockHeight
     this.fields = {
-      $type: eventTypes.map(eventTypeString => {
-        // string must be encoded as CBOR and then presented as a base64 encoded string
-        const eventTypeEncoded = base64pad.baseEncode(cborEncode(eventTypeString))
+      $type: // string must be encoded as CBOR and then presented as a base64 encoded string
         // Codec 81 is CBOR and will only give us builtin-actor events, FEVM events are all RAW
-        return { Codec: 81, Value: eventTypeEncoded }
-      })
+        { Codec: 81, Value: base64pad.baseEncode(cborEncode(eventTypeString)) }
     }
   }
 }

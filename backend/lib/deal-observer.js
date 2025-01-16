@@ -1,7 +1,6 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import {Provider} from 'ethers' */
 
-import { EVENT_TYPES } from './config.js'
 import { ActorEventFilter, RpcApiClient } from './rpc-service/service.js'
 
 class DealObserver {
@@ -30,8 +29,8 @@ class DealObserver {
     return await observer.build()
   }
 
-  async observeBuiltinActorEvents (fromHeight = this.#cache.get('chainHead').Height, toHeight = this.#cache.get('chainHead').Height, eventTypes = EVENT_TYPES) {
-    return this.#rpcApiClient.getActorEvents(new ActorEventFilter(fromHeight, toHeight, eventTypes))
+  async observeBuiltinActorEvents (blockHeight = this.#cache.get('chainHead').Height, eventType = 'claim') {
+    return this.#rpcApiClient.getActorEvents(new ActorEventFilter(blockHeight, eventType))
   }
 }
 

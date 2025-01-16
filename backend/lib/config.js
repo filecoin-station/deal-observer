@@ -12,11 +12,7 @@ if (GLIF_RPC.includes('glif')) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
 }
 
-// The types of events we want to watch out for
-const EVENT_TYPES = ['claim']
-
 export {
   GLIF_RPC,
-  rpcHeaders,
-  EVENT_TYPES
+  rpcHeaders
 }
