@@ -4,10 +4,10 @@ import { ethers } from 'ethers'
 import assert from 'node:assert/strict'
 import timers from 'node:timers/promises'
 import slug from 'slug'
-import { RPC_URL, rpcHeaders } from '../lib/config.js'
+import { GLIF_RPC, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
 import {
-  observeBuiltinActorEvents
+  DealObserver
 } from '../lib/deal-observer.js'
 import { createInflux } from '../lib/telemetry.js'
 
@@ -16,9 +16,9 @@ assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
 
 const pgPool = await createPgPool()
 
-const fetchRequest = new ethers.FetchRequest(RPC_URL)
+const fetchRequest = new ethers.FetchRequest(GLIF_RPC)
 fetchRequest.setHeader('Authorization', rpcHeaders.Authorization || '')
-const provider = new ethers.JsonRpcProvider(fetchRequest, null, { polling: true })
+// const provider = new ethers.JsonRpcProvider(fetchRequest, null, { polling: true })
 
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
@@ -48,7 +48,7 @@ const loop = async (name, fn, interval) => {
 await Promise.all([
   loop(
     'Built-in actor events',
-    () => observeBuiltinActorEvents(pgPool, provider),
+    () => new DealObserver(pgPool),
     30_000
   )
 ])

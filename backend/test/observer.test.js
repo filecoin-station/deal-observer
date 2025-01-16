@@ -1,6 +1,6 @@
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { IpldSchema } from '../lib/rpc-service/ipld-schema.js'
+import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema.js'
 import assert from 'assert'
 import { claimTestEvent } from './test_data/claimEvent.js'
 import { ActorEventFilter, LotusService } from '../lib/rpc-service/service.js'
@@ -38,7 +38,7 @@ describe('deal-observer-backend', () => {
       claimEvent = parseCIDs(claimTestEvent)
     })
     it('transforms a claim event payload to a typed object', async () => {
-      const ipldSchema = await (new IpldSchema().build())
+      const ipldSchema = await (new IpldSchemaValidator().build())
       const typedClaimEvent = ipldSchema.applyType('ClaimEvent', claimEvent)
       assert(typedClaimEvent !== undefined, 'typedClaimEvent is undefined')
       assert.deepStrictEqual(typedClaimEvent, claimTestEvent)

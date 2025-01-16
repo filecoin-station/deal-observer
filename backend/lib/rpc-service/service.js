@@ -3,7 +3,7 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
 import { request } from 'undici'
-import { IpldSchema } from './ipld-schema.js'
+import { IpldSchemaValidator } from './ipld-schema.js'
 import { rawEventEntriesToEvent } from './utils.js'
 
 const makeRpcRequest = async (method, params) => {
@@ -30,7 +30,7 @@ class LotusService {
   }
 
   async build () {
-    this.#ipldSchema = await (new IpldSchema()).build()
+    this.#ipldSchema = await (new IpldSchemaValidator()).build()
     return this
   }
 
