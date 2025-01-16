@@ -21,7 +21,7 @@ const makeRpcRequest = async (method, params) => {
 /*
  A class to interact with the Lotus HTTP RPC API.
 */
-class LotusService {
+class EventService {
   #ipldSchema
   #make_rpc_request
 
@@ -40,7 +40,6 @@ class LotusService {
      * @returns {Promise<object>}
      */
   async getActorEvents (actorEventFilter) {
-    // TODO: Handle multiple events, currently we are expecting a single event to exist in the filter
     const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
     const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.applyType(
       'RawActorEvent', rawEvent
@@ -88,5 +87,5 @@ class ActorEventFilter {
 
 export {
   ActorEventFilter,
-  LotusService
+  EventService
 }

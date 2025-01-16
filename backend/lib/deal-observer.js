@@ -2,11 +2,11 @@
 /** @import {Provider} from 'ethers' */
 
 import { EVENT_TYPES } from './config.js'
-import { ActorEventFilter, LotusService } from './rpc-service/service.js'
+import { ActorEventFilter, EventService } from './rpc-service/service.js'
 
 class DealObserver {
   #pgPool
-  #lotusService
+  #eventService
   #cache
 
   constructor (pgPool = null, chainHead = null) {
@@ -17,16 +17,16 @@ class DealObserver {
   }
 
   async build () {
-    this.#lotusService = await (new LotusService()).build()
+    this.#eventService = await (new EventService()).build()
     if (!this.#cache.get('chainHead')) {
-      const chainHead = await this.#lotusService.getChainHead()
+      const chainHead = await this.#eventService.getChainHead()
       this.#cache.set('chainHead', chainHead)
     }
     return this
   }
 
   async observeBuiltinActorEvents (fromHeight = this.#cache.get('chainHead').Height, toHeight = this.#cache.get('chainHead').Height, eventTypes = EVENT_TYPES) {
-    return this.#lotusService.getActorEvents(new ActorEventFilter(fromHeight, toHeight, eventTypes))
+    return this.#eventService.getActorEvents(new ActorEventFilter(fromHeight, toHeight, eventTypes))
   }
 }
 

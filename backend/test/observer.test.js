@@ -3,7 +3,7 @@ import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observ
 import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema.js'
 import assert from 'assert'
 import { claimTestEvent } from './test_data/claimEvent.js'
-import { ActorEventFilter, LotusService } from '../lib/rpc-service/service.js'
+import { ActorEventFilter, EventService } from '../lib/rpc-service/service.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parseCIDs } from './utils.js'
@@ -45,8 +45,8 @@ describe('deal-observer-backend', () => {
     })
   })
 
-  describe('LotusService', () => {
-    let lotusService
+  describe('EventService', () => {
+    let eventService
 
     before(async () => {
       const makeRpcRequest = async (method, params) => {
@@ -60,16 +60,16 @@ describe('deal-observer-backend', () => {
         }
       }
 
-      lotusService = await (new LotusService(makeRpcRequest)).build()
+      eventService = await (new EventService(makeRpcRequest)).build()
     })
     it('test the retrieval of the chainHead', async () => {
-      const chainHead = await lotusService.getChainHead()
+      const chainHead = await eventService.getChainHead()
       assert(chainHead)
       assert.deepStrictEqual(JSON.stringify(chainHead), JSON.stringify(chainHeadTestData))
     })
 
     it('test the retrieval of rawActorEvents', async () => {
-      const actorEvents = await lotusService.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
+      const actorEvents = await eventService.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
       assert(actorEvents)
       actorEvents.forEach(e => {
         assert(e.height >= 4622129 && e.height <= 4622139)
