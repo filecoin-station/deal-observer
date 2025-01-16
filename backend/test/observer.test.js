@@ -3,10 +3,10 @@ import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observ
 import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema-validator.js'
 import assert from 'assert'
 import { claimTestEvent } from './test_data/claimEvent.js'
-import { ActorEventFilter, RpcService } from '../lib/rpc-service/service.js'
+import { ActorEventFilter, RpcApiClient } from '../lib/rpc-service/service.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
-import { parseCIDs } from './utils.js'
+import { parse } from '@ipld/dag-json'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -35,43 +35,57 @@ describe('deal-observer-backend', () => {
     let claimEvent
 
     before(() => {
-      claimEvent = parseCIDs(claimTestEvent)
+      claimEvent = parse(JSON.stringify(claimTestEvent))
     })
     it('validates and converts a claim event payload to a typed object', async () => {
       const ipldSchema = await (new IpldSchemaValidator().build())
       const typedClaimEvent = ipldSchema.applyType('ClaimEvent', claimEvent)
       assert(typedClaimEvent !== undefined, 'typedClaimEvent is undefined')
-      assert.deepStrictEqual(typedClaimEvent, claimTestEvent)
+      assert.deepStrictEqual(typedClaimEvent, claimEvent)
     })
   })
 
-  describe('RpcService', () => {
-    let rpcService
+  describe('RpcApiClient', () => {
+    let rpcApiClient
 
     before(async () => {
       const makeRpcRequest = async (method, params) => {
         switch (method) {
           case 'Filecoin.ChainHead':
-            return parseCIDs(chainHeadTestData)
+            return parse(JSON.stringify(chainHeadTestData))
           case 'Filecoin.GetActorEventsRaw':
-            return parseCIDs(rawActorEventTestData).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+            return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
           default:
             console.error('Unknown method')
         }
       }
 
-      rpcService = await (new RpcService(makeRpcRequest)).build()
+      rpcApiClient = await (new RpcApiClient(makeRpcRequest)).build()
     })
     it('test the retrieval of the chainHead', async () => {
-      const chainHead = await rpcService.getChainHead()
+      const chainHead = await rpcApiClient.getChainHead()
       assert(chainHead)
       assert.deepStrictEqual(JSON.stringify(chainHead), JSON.stringify(chainHeadTestData))
     })
 
     it('test the retrieval of rawActorEvents', async () => {
-      const actorEvents = await rpcService.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
+      const validator = await IpldSchemaValidator.create()
+      const actorEvents = await rpcApiClient.getActorEvents(new ActorEventFilter(4622129, 4622139, ['claim']))
       assert(actorEvents)
       actorEvents.forEach(e => {
+        // Validate type
+        assert(validator.applyType('ClaimEvent', {
+          id: e.event.id,
+          client: e.event.client,
+          provider: e.event.provider,
+          pieceCid: e.event.pieceCid,
+          pieceSize: e.event.pieceSize,
+          termMin: e.event.termMin,
+          termMax: e.event.termMax,
+          termStart: e.event.termStart,
+          sector: e.event.sector
+        }), `Invalid claim event: ${JSON.stringify(e.event)}`)
+
         assert(e.height >= 4622129 && e.height <= 4622139)
       })
     })

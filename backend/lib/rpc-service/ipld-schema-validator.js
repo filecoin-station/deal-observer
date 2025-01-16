@@ -13,6 +13,11 @@ class IpldSchemaValidator {
     return this
   }
 
+  static async create () {
+    const validator = new IpldSchemaValidator()
+    return await validator.build()
+  }
+
   #createType (name) {
     // TODO: Catch and log errors
     return create(schemaDmt, name)

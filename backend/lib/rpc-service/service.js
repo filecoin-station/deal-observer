@@ -21,17 +21,22 @@ const makeRpcRequest = async (method, params) => {
 /*
  A class to interact with.
 */
-class RpcService {
+class RpcApiClient {
   #ipldSchema
   #make_rpc_request
 
-  constructor (rpcRequest = makeRpcRequest) {
+  constructor (rpcRequest) {
     this.#make_rpc_request = rpcRequest
   }
 
   async build () {
     this.#ipldSchema = await (new IpldSchemaValidator()).build()
     return this
+  }
+
+  static async create (rpcRequest = makeRpcRequest) {
+    const apiClient = new RpcApiClient(rpcRequest)
+    return apiClient.build()
   }
 
   /**
@@ -87,5 +92,5 @@ class ActorEventFilter {
 
 export {
   ActorEventFilter,
-  RpcService
+  RpcApiClient
 }
