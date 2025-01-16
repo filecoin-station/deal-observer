@@ -1,5 +1,4 @@
-import { CID } from 'multiformats/cid'
-
+// Provides an example chain head data point for the height of 4622139
 const chainHeadTestData = {
     "Blocks": [
         {

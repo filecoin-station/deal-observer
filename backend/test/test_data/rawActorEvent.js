@@ -1,4 +1,4 @@
-[
+let rawActorEventTestData = [
     {
         "emitter": "f06",
         "entries": [
@@ -31329,3 +31329,7 @@
         ]
     }
 ]
+
+export{
+    rawActorEventTestData
+}

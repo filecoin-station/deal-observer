@@ -45,7 +45,7 @@ class LotusService {
   async getActorEvents(actorEventFilter) {
     // TODO: Handle multiple events, currently we are expecting a single event to exist in the filter
     const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
-    const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.transform(
+    const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.applyType(
       'RawActorEvent', rawEvent
     ))
     // An emitted event contains the height at which it was emitted, the emitter and the event itself
@@ -53,7 +53,7 @@ class LotusService {
     for (const typedEventEntries of typedRawEventEntries) {
       const { event, eventType } = rawEventEntriesToEvent(typedEventEntries.entries)
       // Verify the returned event matches the expected event schema 
-      const typedEvent = this.#ipldSchema.transform(eventType, event)
+      const typedEvent = this.#ipldSchema.applyType(eventType, event)
       emittedEvents.add(
         {
           height: typedEventEntries.height,
