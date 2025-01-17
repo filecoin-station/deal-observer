@@ -4,15 +4,15 @@ const {
 } = process.env
 
 const rpcUrls = RPC_URLS.split(',')
-const GLIF_RPC = rpcUrls[Math.floor(Math.random() * rpcUrls.length)]
-console.log(`Selected JSON-RPC endpoint ${GLIF_RPC}`)
+const RPC_URL = rpcUrls[Math.floor(Math.random() * rpcUrls.length)]
+console.log(`Selected JSON-RPC endpoint ${RPC_URLS}`)
 
 const rpcHeaders = {}
-if (GLIF_RPC.includes('glif')) {
+if (RPC_URLS.includes('glif')) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
 }
 
 export {
-  GLIF_RPC,
+  RPC_URL,
   rpcHeaders
 }

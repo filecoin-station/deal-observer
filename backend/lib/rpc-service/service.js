@@ -1,4 +1,4 @@
-import { GLIF_RPC } from '../config.js'
+import { RPC_URL } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
@@ -8,7 +8,7 @@ import { rawEventEntriesToEvent } from './utils.js'
 
 const makeRpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-  const response = await request(GLIF_RPC, {
+  const response = await request(RPC_URL, {
     bodyTimeout: 1000 * 60,
     headersTimeout: 1000 * 60,
     method: 'POST',
@@ -25,16 +25,16 @@ class RpcApiClient {
   #ipldSchema
   #make_rpc_request
 
-  constructor (rpcRequest) {
+  constructor(rpcRequest) {
     this.#make_rpc_request = rpcRequest
   }
 
-  async build () {
+  async build() {
     this.#ipldSchema = await (new IpldSchemaValidator()).build()
     return this
   }
 
-  static async create (rpcRequest = makeRpcRequest) {
+  static async create(rpcRequest = makeRpcRequest) {
     const apiClient = new RpcApiClient(rpcRequest)
     return apiClient.build()
   }
@@ -44,8 +44,12 @@ class RpcApiClient {
      * Returns actor events filtered by the given actorEventFilter
      * @returns {Promise<object>}
      */
-  async getActorEvents (actorEventFilter) {
+  async getActorEvents(actorEventFilter) {
     const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+    if (rawEvents && rawEvents.length === 0) {
+      console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
+      return []
+    }
     const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.applyType(
       'RawActorEvent', rawEvent
     ))
@@ -65,7 +69,7 @@ class RpcApiClient {
     return emittedEvents
   }
 
-  async getChainHead () {
+  async getChainHead() {
     return await this.#make_rpc_request('Filecoin.ChainHead', [])
   }
 }
@@ -75,19 +79,16 @@ class ActorEventFilter {
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-  constructor (blockHeight, eventTypeString) {
+  constructor(blockHeight, eventTypeString) {
     // We only search for events in a single block
     this.fromHeight = blockHeight
     this.toHeight = blockHeight
     this.fields = {
       $type: // string must be encoded as CBOR and then presented as a base64 encoded string
         // Codec 81 is CBOR and will only give us builtin-actor events, FEVM events are all RAW
-        { Codec: 81, Value: base64pad.baseEncode(cborEncode(eventTypeString)) }
+        [{ Codec: 81, Value: base64pad.baseEncode(cborEncode(eventTypeString)) }]
     }
   }
 }
 
-export {
-  ActorEventFilter,
-  RpcApiClient
-}
+export { RpcApiClient, ActorEventFilter }

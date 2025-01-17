@@ -1,7 +1,7 @@
+import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { IpldSchemaValidator } from '../lib/rpc-service/ipld-schema-validator.js'
-import assert from 'assert'
 import { claimTestEvent } from './test_data/claimEvent.js'
 import { ActorEventFilter, RpcApiClient } from '../lib/rpc-service/service.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
@@ -21,15 +21,20 @@ describe('deal-observer-backend', () => {
   })
 
   describe('observeBuiltinActorEvents', () => {
+    let providerMock
     beforeEach(async () => {
-      // TODO: reset DB
-      // await pgPool.query('DELETE FROM daily_reward_transfers')
+      await pgPool.query('DELETE FROM active_deals')
+
+      providerMock = {
+        getBlockNumber: async () => 2000
+      }
     })
 
     // TODO - remove this placeholder and implement proper tests
     it('adds new FIL+ deals from built-in actor events', async () => {
-    })
+      
   })
+})
 
   describe('IPLD Schema Validator', () => {
     let claimEvent
