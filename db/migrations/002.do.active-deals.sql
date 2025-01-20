@@ -8,8 +8,6 @@ CREATE TABLE active_deals (
   term_min INT NOT NULL,
   term_max INT NOT NULL,
   sector_id INT NOT NULL,
-  payload_cid TEXT,
-
-  UNIQUE (miner_id, client_id, sector_id, piece_cid, piece_size)
+  payload_cid TEXT
 );
 

@@ -7,6 +7,7 @@ import Postgrator from 'postgrator'
 /** @typedef {import('./typings.js').Queryable} Queryable */
 /** @typedef {import('./typings.js').PgPool} PgPool */
 
+// Configure node-postgres to deserialize BIGINT values as BigInt, not String
 pg.types.setTypeParser(20, BigInt) // Type Id 20 = BIGINT | BIGSERIAL
 
 const {
