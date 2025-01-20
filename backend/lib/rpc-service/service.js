@@ -25,16 +25,16 @@ class RpcApiClient {
   #ipldSchema
   #make_rpc_request
 
-  constructor(rpcRequest) {
+  constructor (rpcRequest) {
     this.#make_rpc_request = rpcRequest
   }
 
-  async build() {
+  async build () {
     this.#ipldSchema = await (new IpldSchemaValidator()).build()
     return this
   }
 
-  static async create(rpcRequest = makeRpcRequest) {
+  static async create (rpcRequest = makeRpcRequest) {
     const apiClient = new RpcApiClient(rpcRequest)
     return apiClient.build()
   }
@@ -44,7 +44,7 @@ class RpcApiClient {
      * Returns actor events filtered by the given actorEventFilter
      * @returns {Promise<object>}
      */
-  async getActorEvents(actorEventFilter) {
+  async getActorEvents (actorEventFilter) {
     const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
     if (rawEvents && rawEvents.length === 0) {
       console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
@@ -69,7 +69,7 @@ class RpcApiClient {
     return emittedEvents
   }
 
-  async getChainHead() {
+  async getChainHead () {
     return await this.#make_rpc_request('Filecoin.ChainHead', [])
   }
 }
@@ -79,7 +79,7 @@ class ActorEventFilter {
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-  constructor(blockHeight, eventTypeString) {
+  constructor (blockHeight, eventTypeString) {
     // We only search for events in a single block
     this.fromHeight = blockHeight
     this.toHeight = blockHeight

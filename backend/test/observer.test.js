@@ -21,20 +21,15 @@ describe('deal-observer-backend', () => {
   })
 
   describe('observeBuiltinActorEvents', () => {
-    let providerMock
     beforeEach(async () => {
       await pgPool.query('DELETE FROM active_deals')
-
-      providerMock = {
-        getBlockNumber: async () => 2000
-      }
     })
 
     // TODO - remove this placeholder and implement proper tests
     it('adds new FIL+ deals from built-in actor events', async () => {
-      
+
+    })
   })
-})
 
   describe('IPLD Schema Validator', () => {
     let claimEvent

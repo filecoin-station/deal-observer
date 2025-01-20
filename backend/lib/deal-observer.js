@@ -1,20 +1,20 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import {Provider} from 'ethers' */
-import { parse } from '@ipld/dag-json'
 import assert from 'node:assert'
 
 import { ActorEventFilter, RpcApiClient } from './rpc-service/service.js'
+const NUM_CACHED_DEALS = 1000
 
 class DealObserver {
   #pgPool
   #rpcApiClient
   #cache
 
-  constructor (pgPool, chainHead) {
+  constructor (pgPool) {
     // TODO: Store events in pgPool
     this.#pgPool = pgPool
     this.#cache = new Map()
-    this.#cache.set('lastStoredHeight', null)
+    this.#cache.set('activeDeals', new Set())
   }
 
   async build () {
@@ -22,7 +22,7 @@ class DealObserver {
     return this
   }
 
-  static async create (pgPool = null, chainHead = null) {
+  static async create (pgPool = null) {
     const observer = new DealObserver(pgPool)
     return await observer.build()
   }
@@ -32,38 +32,39 @@ class DealObserver {
   }
 
   async observeBuiltinActorEvents (blockHeight, eventType = 'claim') {
-    let activeDeals = await this.#rpcApiClient.getActorEvents(new ActorEventFilter(blockHeight, eventType))
-    assert(activeDeals != undefined, `No ${eventType} events found in block ${blockHeight}`)
+    const activeDeals = await this.#rpcApiClient.getActorEvents(new ActorEventFilter(blockHeight, eventType))
+    assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
+    console.log(`Observed ${activeDeals.size} ${eventType} events in block ${blockHeight}`)
     await this.storeActiveDeals(activeDeals)
-    // Update the last stored height in the cache
-    this.#cache.set('lastStoredHeight', activeDeals.length > 0 ? activeDeals[activeDeals.length - 1].height : blockHeight)
   }
 
-  async getLastStoredHeight () {
-    const cachedLastStoredHeight = this.#cache.get('lastStoredHeight');
-    if (!cachedLastStoredHeight){
-      let latestDeal = await this.fetchDealWithHighestActivatedEpoch();
-      return latestDeal? latestDeal.height : null;
+  async fetchDealWithHighestActivatedEpoch () {
+    // The cache always contains the latest active deals that were fetched. If the cache is not empty, return the last stored deal.
+    if (this.#cache.get('activeDeals').size > 0) {
+      const lastStoredDeal = [...this.#cache.get('activeDeals')].sort((a, b) => a.height - b.height).slice(-1)
+      return lastStoredDeal
     }
-    return cachedLastStoredHeight
+
+    const client = await this.#pgPool.connect()
+    const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
+    const result = await client.query(query)
+    client.release()
+    return result.rows.length > 0 ? result.rows[0] : null
   }
 
-  async fetchDealWithHighestActivatedEpoch(){
-    const client = await this.#pgPool.connect();
-    const query = "SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1";
-    const result = await client.query(query);
-    client.release();
-    return result.rows.length > 0 ? result.rows[0] : null;
-  }
-
-  async storeActiveDeals(activeDeals){
-    const client = await this.#pgPool.connect();
-    try {
+  async storeActiveDeals (activeDeals) {
+    console.log(`Storing ${activeDeals.length} active deals in the cache.`)
+    this.#cache.set('activeDeals', new Set([...this.#cache.get('activeDeals'), ...activeDeals]))
+    console.log(`Cached active deals: ${Array.from(this.#cache.get('activeDeals')).length}`)
+    
+    if (this.#cache.get('activeDeals').size >= NUM_CACHED_DEALS) {
+      const client = await this.#pgPool.connect()
+      try {
       // Start a transaction
-      await client.query('BEGIN');
-  
-      // Insert deals in a batch
-      const insertQuery = `
+        await client.query('BEGIN')
+
+        // Insert deals in a batch
+        const insertQuery = `
         INSERT INTO active_deals (
           activated_at_epoch,
           miner,
@@ -77,59 +78,37 @@ class DealObserver {
           payload_cid
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9 ,$10)
-      `;
-      
-      // Loop through the deals array and execute the insert query for each deal
-      for (const deal of activeDeals) {        
-        await client.query(insertQuery, [
-          deal.height,
-          deal.event.provider,
-          deal.event.client,
-          deal.event.pieceCid,
-          deal.event.pieceSize,
-          deal.event.termStart,
-          deal.event.termMin,
-          deal.event.termMax,
-          deal.event.sector,
-          null
-        ]);
-      }
-  
-      // Commit the transaction if all inserts are successful
-      await client.query('COMMIT');
-      console.log('All deals inserted successfully.');
-      
-    } catch (error) {
+      `
+
+        // Loop through the deals array and execute the insert query for each deal
+        for (const deal of this.#cache.get('activeDeals')) {
+          await client.query(insertQuery, [
+            deal.height,
+            deal.event.provider,
+            deal.event.client,
+            deal.event.pieceCid,
+            deal.event.pieceSize,
+            deal.event.termStart,
+            deal.event.termMin,
+            deal.event.termMax,
+            deal.event.sector,
+            null
+          ])
+        }
+
+        // Commit the transaction if all inserts are successful
+        await client.query('COMMIT')
+        console.log(`Stored ${this.#cache.get('activeDeals').size} active deals in the database. Resetting cache`)
+        this.#cache.set('activeDeals', new Set())
+      } catch (error) {
       // If any error occurs, roll back the transaction
-      await client.query('ROLLBACK');
-      console.error('Error inserting deals. Rolling back:', error.message);
-    } finally {
+        await client.query('ROLLBACK')
+        console.error('Error inserting deals. Rolling back:', error.message)
+      } finally {
       // Release the client back to the pool
-      client.release();
+        client.release()
+      }
     }
-  }
-  async fetchActiveDealsByKey(searchParams){
-    function buildQuery(baseQuery, conditions) {
-      const queryParts = [];
-      
-      // Iterate through conditions and build the WHERE clauses dynamically
-      conditions.forEach(({key,value}) => {        
-        // Add the condition to the queryParts array
-        queryParts.push(`${key} = ${value}`);
-      });
-    
-      // Combine base query with dynamically built WHERE clause
-      const finalQuery = queryParts.length > 0 ? `${baseQuery} ${queryParts.join(' AND ')}` : baseQuery;
-      
-      return finalQuery;
-    }
-    const client = await this.#pgPool.connect();
-    const baseQuery = "SELECT * FROM active_deals WHERE";
-    const query = buildQuery(baseQuery, searchParams);
-    let result = await client.query(query)
-    result = parse(result)
-    client.release();
-    return result
   }
 }
 
