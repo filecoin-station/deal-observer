@@ -9,6 +9,13 @@ const encodeCborInBase64 = (data) => {
   return base64pad.baseEncode(cborEncode(data))
 }
 
+
+/**
+ * Converts raw event entries into a typed event
+ * 
+ * @param {Array<{Key: string, Value: string}>} rawEventEntries
+ * @return {{event: Object, eventType: string}} event
+  */
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}
@@ -20,7 +27,7 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     const value = decodeCborInBase64(entry.Value)
     // In each entry exists an event type declaration which we need to extract
     if (key === '$type') {
-      eventType = value.concat('event')
+      eventType = value
       // The type entry is not part of the event itself
       continue
     }

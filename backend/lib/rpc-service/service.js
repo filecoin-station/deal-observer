@@ -3,12 +3,18 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
 import { request } from 'undici'
-import { IpldSchemaValidator } from './ipld-schema-validator.js'
 import { rawEventEntriesToEvent } from './utils.js'
+import { Value } from '@sinclair/typebox/value'
+import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
 
 /** @import {CID} from 'multiformats' */
 
-const makeRpcRequest = async (method, params) => {
+/**
+ * @param {string} method
+ * @param {Object} params
+  * @returns {Promise<object>}
+  */
+export const rpcRequestFn = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   const response = await request(RPC_URL, {
     bodyTimeout: 1000 * 60,
@@ -19,87 +25,67 @@ const makeRpcRequest = async (method, params) => {
   })
   return jsonDecode(new Uint8Array(await response.body.arrayBuffer())).result
 }
-
-/*
- A class to interact with.
-*/
-class RpcApiClient {
-  #ipldSchema
-  #makeRpcRequest
-
-  constructor(rpcRequest = makeRpcRequest) {
-    this.#makeRpcRequest = rpcRequest
-    this.#ipldSchema = new IpldSchemaValidator()
-  }
-
-  /**
-     * @param {ActorEventFilter} actorEventFilter
+/**
+     * @param {object} actorEventFilter
      * Returns actor events filtered by the given actorEventFilter
-     * @returns {Promise<object>}
+     * @returns {Promise<Array<BlockEvent>>}
      */
-  async getActorEvents(actorEventFilter) {
-    const rawEvents = (await this.#makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
-    if (!rawEvents || rawEvents.length === 0) {
-      console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
-      return []
-    }
-    // TODO: handle reverted events
-    const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.applyType(
-      'RawActorEvent', rawEvent
-    ))
-    // An emitted event contains the height at which it was emitted, the emitter and the event itself
-    /**
-      * @type {{
-      *  height: number,
-      *  emitter: number,
-      *  event: {
-      * id: number,
-      * client: number,
-      * provider: number,
-       * pieceCid: CID,
-      * pieceSize: number, 
-      * termMin: number, 
-      * termMax: number,  
-      * termStart: number, 
-      * sector: number, 
-      * },
-      * }[]}
-      */
-    let emittedEvents = []
-    for (const typedEventEntries of typedRawEventEntries) {
-      const { event, eventType } = rawEventEntriesToEvent(typedEventEntries.entries)
-      // Verify the returned event matches the expected event schema
-      const typedEvent = this.#ipldSchema.applyType(eventType, event)
-      emittedEvents.push(
-        {
-          height: typedEventEntries.height,
-          emitter: typedEventEntries.emitter,
-          event: typedEvent
-        })
-    }
-    return emittedEvents
+export async function getActorEvents (actorEventFilter, makeRpcRequest) {
+  const rawEvents = (await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+  if (!rawEvents || rawEvents.length === 0) {
+    console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
+    return []
   }
-
-  async getChainHead() {
-    return await this.#makeRpcRequest('Filecoin.ChainHead', [])
+  // TODO: handle reverted events
+  const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent) )
+  // An emitted event contains the height at which it was emitted, the emitter and the event itself
+  const emittedEvents = []
+  for (const typedEventEntries of typedRawEventEntries) {
+    const { event, eventType } = rawEventEntriesToEvent(typedEventEntries.entries)
+    // Verify the returned event matches the expected event schema
+    let typedEvent
+    switch (eventType) {
+      case 'claim':{
+        typedEvent = Value.Parse(ClaimEvent, event)
+        emittedEvents.push(
+          Value.Parse(BlockEvent,
+          {
+            height: typedEventEntries.height,
+            emitter: typedEventEntries.emitter,
+            event: typedEvent
+          }))
+        continue
+      }
+      default: {
+        console.error(`Unknown event type: ${eventType}`)
+        break
+      }
+    }
   }
+  return emittedEvents
 }
 
-class ActorEventFilter {
-  /**
+/**
+ * @param {function} makeRpcRequest
+ * @returns {Promise<object>}
+ */
+export async function getChainHead (makeRpcRequest) {
+  return await makeRpcRequest('Filecoin.ChainHead', [])
+}
+
+/**
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-  constructor(blockHeight, eventTypeString) {
-    // We only search for events in a single block
-    this.fromHeight = blockHeight
-    this.toHeight = blockHeight
-    this.fields = {
+export function getActorEventsFilter(blockHeight, eventTypeString) {
+  // We only search for events in a single block
+  return {
+    fromHeight: blockHeight,
+    toHeight: blockHeight,
+    fields: {
       $type: // string must be encoded as CBOR and then presented as a base64 encoded string
         // Codec 81 is CBOR and will only give us builtin-actor events, FEVM events are all RAW
         [{ Codec: 81, Value: base64pad.baseEncode(cborEncode(eventTypeString)) }]
     }
   }
 }
-
-export { RpcApiClient, ActorEventFilter }

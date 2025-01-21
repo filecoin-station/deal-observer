@@ -1,4 +1,4 @@
-//import * as Sentry from '@sentry/node'
+import * as Sentry from '@sentry/node'
 import { status } from 'http-responders'
 
 /** @typedef {import('@filecoin-station/deal-observer-db').PgPool} PgPool */
@@ -57,7 +57,6 @@ const errorHandler = (res, err, logger) => {
   }
 
   if (res.statusCode >= 500) {
-    // TODO: Enable Sentry for production
-    //Sentry.captureException(err)
+    Sentry.captureException(err)
   }
 }
