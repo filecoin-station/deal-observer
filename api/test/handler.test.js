@@ -1,10 +1,9 @@
 import createDebug from 'debug'
-import { once } from 'node:events'
-import http from 'node:http'
+import Fastify from 'fastify'
 import { after, before, describe, it } from 'node:test'
 
 import { createPgPool, migrateWithPgClient } from '../../db/index.js'
-import { createHandler } from '../lib/handler.js'
+import { createApp } from '../lib/app.js'
 import { assertResponseStatus, getPort } from './test-helpers.js'
 
 const debug = createDebug('test')
@@ -12,8 +11,8 @@ const debug = createDebug('test')
 describe('HTTP request handler', () => {
   /** @type {import('@filecoin-station/deal-observer-db').PgPool} */
   let pgPool
-  /** @type {http.Server} */
-  let server
+  /** @type {Fastify.FastifyInstance} */
+  let app
   /** @type {string} */
   let baseUrl
 
@@ -21,24 +20,16 @@ describe('HTTP request handler', () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
 
-    const handler = createHandler({
+    app = createApp({
       pgPool,
-      logger: {
-        info: debug,
-        error: console.error,
-        request: debug
-      }
+      logger: false
     })
 
-    server = http.createServer(handler)
-    server.listen()
-    await once(server, 'listening')
-    baseUrl = `http://127.0.0.1:${getPort(server)}`
+    baseUrl = await app.listen()
   })
 
   after(async () => {
-    server.closeAllConnections()
-    server.close()
+    await app.close()
     await pgPool.end()
   })
 
