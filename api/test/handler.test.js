@@ -1,17 +1,13 @@
-import createDebug from 'debug'
-import Fastify from 'fastify'
 import { after, before, describe, it } from 'node:test'
 
 import { createPgPool, migrateWithPgClient } from '../../db/index.js'
 import { createApp } from '../lib/app.js'
-import { assertResponseStatus, getPort } from './test-helpers.js'
-
-const debug = createDebug('test')
+import { assertResponseStatus } from './test-helpers.js'
 
 describe('HTTP request handler', () => {
   /** @type {import('@filecoin-station/deal-observer-db').PgPool} */
   let pgPool
-  /** @type {Fastify.FastifyInstance} */
+  /** @type {import('fastify').FastifyInstance} */
   let app
   /** @type {string} */
   let baseUrl

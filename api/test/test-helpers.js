@@ -9,12 +9,3 @@ export const assertResponseStatus = async (res, status) => {
     })
   }
 }
-
-/**
- * @param {import('http').Server} server
- */
-export const getPort = (server) => {
-  const address = server.address()
-  assert(typeof address === 'object')
-  return address.port
-}
