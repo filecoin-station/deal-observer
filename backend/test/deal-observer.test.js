@@ -39,14 +39,14 @@ describe('deal-observer-backend', () => {
     const result = await pgPool.query('SELECT * FROM active_deals')
     const expectedData = {
       activated_at_epoch: event.height,
-      miner: eventData.provider,
-      client: eventData.client,
+      miner_id: eventData.provider,
+      client_id: eventData.client,
       piece_cid: JSON.stringify(eventData.pieceCid),
       piece_size: eventData.pieceSize,
       term_start_epoch: eventData.termStart,
       term_min: eventData.termMin,
       term_max: eventData.termMax,
-      sector: eventData.sector,
+      sector_id: eventData.sector,
       payload_cid: eventData.payload_cid // not present in storage
     }
     const actualData = result.rows.map((record) => {

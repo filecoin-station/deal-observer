@@ -10,10 +10,6 @@ updates:
     commit-message:
       prefix: "deps"
       prefix-development: "deps(dev)"
-    reviewers:
-      - "bajtos"
-      - "juliangruber"
-      - "NikolasHaimerl"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -22,10 +18,6 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "ci"
-    reviewers:
-      - "bajtos"
-      - "juliangruber"
-      - "NikolasHaimerl"
   - package-ecosystem: "docker"
     directories:
       - "/"
@@ -33,7 +25,3 @@ updates:
       interval: "daily"
       time: "15:00"
       timezone: "Europe/Berlin"
-    reviewers:
-      - "bajtos"
-      - "juliangruber"
-      - "NikolasHaimerl"
