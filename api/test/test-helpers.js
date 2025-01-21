@@ -1,4 +1,4 @@
-import assert, { AssertionError } from 'node:assert'
+import { AssertionError } from 'node:assert'
 
 export const assertResponseStatus = async (res, status) => {
   if (res.status !== status) {
