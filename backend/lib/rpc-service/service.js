@@ -6,6 +6,8 @@ import { request } from 'undici'
 import { IpldSchemaValidator } from './ipld-schema-validator.js'
 import { rawEventEntriesToEvent } from './utils.js'
 
+/** @import {CID} from 'multiformats' */
+
 const makeRpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   const response = await request(RPC_URL, {
@@ -23,20 +25,11 @@ const makeRpcRequest = async (method, params) => {
 */
 class RpcApiClient {
   #ipldSchema
-  #make_rpc_request
+  #makeRpcRequest
 
-  constructor (rpcRequest) {
-    this.#make_rpc_request = rpcRequest
-  }
-
-  async build () {
-    this.#ipldSchema = await (new IpldSchemaValidator()).build()
-    return this
-  }
-
-  static async create (rpcRequest = makeRpcRequest) {
-    const apiClient = new RpcApiClient(rpcRequest)
-    return apiClient.build()
+  constructor(rpcRequest = makeRpcRequest) {
+    this.#makeRpcRequest = rpcRequest
+    this.#ipldSchema = new IpldSchemaValidator()
   }
 
   /**
@@ -44,22 +37,40 @@ class RpcApiClient {
      * Returns actor events filtered by the given actorEventFilter
      * @returns {Promise<object>}
      */
-  async getActorEvents (actorEventFilter) {
-    const rawEvents = (await this.#make_rpc_request('Filecoin.GetActorEventsRaw', [actorEventFilter]))
-    if (rawEvents && rawEvents.length === 0) {
+  async getActorEvents(actorEventFilter) {
+    const rawEvents = (await this.#makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+    if (!rawEvents || rawEvents.length === 0) {
       console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
       return []
     }
+    // TODO: handle reverted events
     const typedRawEventEntries = rawEvents.map((rawEvent) => this.#ipldSchema.applyType(
       'RawActorEvent', rawEvent
     ))
     // An emitted event contains the height at which it was emitted, the emitter and the event itself
-    const emittedEvents = new Set()
+    /**
+      * @type {{
+      *  height: number,
+      *  emitter: number,
+      *  event: {
+      * id: number,
+      * client: number,
+      * provider: number,
+       * pieceCid: CID,
+      * pieceSize: number, 
+      * termMin: number, 
+      * termMax: number,  
+      * termStart: number, 
+      * sector: number, 
+      * },
+      * }[]}
+      */
+    let emittedEvents = []
     for (const typedEventEntries of typedRawEventEntries) {
       const { event, eventType } = rawEventEntriesToEvent(typedEventEntries.entries)
       // Verify the returned event matches the expected event schema
       const typedEvent = this.#ipldSchema.applyType(eventType, event)
-      emittedEvents.add(
+      emittedEvents.push(
         {
           height: typedEventEntries.height,
           emitter: typedEventEntries.emitter,
@@ -69,8 +80,8 @@ class RpcApiClient {
     return emittedEvents
   }
 
-  async getChainHead () {
-    return await this.#make_rpc_request('Filecoin.ChainHead', [])
+  async getChainHead() {
+    return await this.#makeRpcRequest('Filecoin.ChainHead', [])
   }
 }
 
@@ -79,7 +90,7 @@ class ActorEventFilter {
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-  constructor (blockHeight, eventTypeString) {
+  constructor(blockHeight, eventTypeString) {
     // We only search for events in a single block
     this.fromHeight = blockHeight
     this.toHeight = blockHeight

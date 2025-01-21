@@ -6,16 +6,11 @@ class IpldSchemaValidator {
   #claimEventSchema
   #rawActorEventSchema
 
-  async build () {
+  constructor () {
     // TODO: Catch and log errors
     this.#claimEventSchema = this.#createType('ClaimEvent')
     this.#rawActorEventSchema = this.#createType('RawActorEvent')
     return this
-  }
-
-  static async create () {
-    const validator = new IpldSchemaValidator()
-    return await validator.build()
   }
 
   #createType (name) {

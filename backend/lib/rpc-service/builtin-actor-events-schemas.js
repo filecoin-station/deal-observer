@@ -11,7 +11,7 @@ type ClaimEvent struct {
   termMax Int 
   termStart Int 
   sector Int 
-}
+} 
 
 # | flags             | key             | value                         |
 # | ----------------- | --------------- | ----------------------------- |

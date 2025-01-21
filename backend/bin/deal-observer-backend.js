@@ -2,29 +2,29 @@ import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
 import { ethers } from 'ethers'
 import timers from 'node:timers/promises'
-// import slug from 'slug'
+import slug from 'slug'
 import { RPC_URL, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
 import {
   DealObserver
 } from '../lib/deal-observer.js'
-// import { createInflux } from '../lib/telemetry.js'
+import { createInflux } from '../lib/telemetry.js'
+import assert from 'node:assert'
 
-// const { INFLUXDB_TOKEN } = process.env
-// assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
-const LOOP_BACK_INTERVAL = 30 * 1000
-const pgPool = await createPgPool()
+const { INFLUXDB_TOKEN } = process.env
+//assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
+const LOOP_BACK_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
-// We do not want to fetch deals that are newer than the current chain head - 900 epochs.
+// We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
+const pgPool = await createPgPool()
 
 const fetchRequest = new ethers.FetchRequest(RPC_URL)
 fetchRequest.setHeader('Authorization', rpcHeaders.Authorization || '')
-// const provider = new ethers.JsonRpcProvider(fetchRequest, null, { polling: true })
+const NAME = 'Built-in actor events'
+const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
-// const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
-
-const loop = async (dealObserver, name, interval) => {
+const dealObserverLoop = async (dealObserver) => {
   while (true) {
     const start = Date.now()
     try {
@@ -34,7 +34,6 @@ const loop = async (dealObserver, name, interval) => {
       const lastEpochStored = await dealObserver.fetchDealWithHighestActivatedEpoch().height ?? currentFinalizedChainHead - 1
       if (lastEpochStored < currentFinalizedChainHead) {
         // TODO: The free plan does not allow for fetching epochs older than 2000 blocks. We need to account for that.
-        // TODO: Since we call each epoch individually and the db write is not the bottleneck we can parallelize this process
         for (const epoch of Array.from({ length: currentFinalizedChainHead - lastEpochStored + 1 }, (_, i) => i + lastEpochStored)) {
           await dealObserver.observeBuiltinActorEvents(epoch)
         }
@@ -44,25 +43,24 @@ const loop = async (dealObserver, name, interval) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop ${name}" took ${dt}ms`)
+    console.log(`Loop ${NAME}" took ${dt}ms`)
 
-    // recordTelemetry(`loop_${slug(name, '_')}`, point => {
-    //   point.intField('interval_ms', interval)
-    //   point.intField('duration_ms', dt)
-    // })
-
-    if (dt < interval) {
-      await timers.setTimeout(interval - dt)
+    // Remove once influx db is enabled 
+    if (INFLUXDB_TOKEN){
+      recordTelemetry(`loop_${slug(NAME, '_')}`, point => {
+        point.intField('interval_ms', LOOP_BACK_INTERVAL)
+        point.intField('duration_ms', dt)
+      })
+    }
+    if (dt < LOOP_BACK_INTERVAL) {
+      await timers.setTimeout(LOOP_BACK_INTERVAL - dt)
     }
   }
 }
 
-await Promise.all([
-  DealObserver.create(pgPool).then(async (dealObserver) =>
-    await loop(
-      dealObserver,
-      'Built-in actor events',
-      LOOP_BACK_INTERVAL
-    )
+Promise.all([
+  dealObserverLoop(
+    new DealObserver(pgPool)
   )
 ])
+
