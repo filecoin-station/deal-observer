@@ -33,7 +33,7 @@ describe('RpcApiClient', () => {
       assert(actorEvents.length > 0)
       actorEvents.forEach(e => {
         // Validate type
-        let parsedEvent = Value.Parse(ClaimEvent, e.event)
+        const parsedEvent = Value.Parse(ClaimEvent, e.event)
         assert(parsedEvent, `Invalid claim event: ${JSON.stringify(e.event)}`)
         assert(e.height >= 4622129 && e.height <= 4622139)
       })

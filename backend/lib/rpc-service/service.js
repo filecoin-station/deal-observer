@@ -37,7 +37,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
     return []
   }
   // TODO: handle reverted events
-  const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent) )
+  const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent))
   // An emitted event contains the height at which it was emitted, the emitter and the event itself
   const emittedEvents = []
   for (const typedEventEntries of typedRawEventEntries) {
@@ -49,11 +49,11 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
         typedEvent = Value.Parse(ClaimEvent, event)
         emittedEvents.push(
           Value.Parse(BlockEvent,
-          {
-            height: typedEventEntries.height,
-            emitter: typedEventEntries.emitter,
-            event: typedEvent
-          }))
+            {
+              height: typedEventEntries.height,
+              emitter: typedEventEntries.emitter,
+              event: typedEvent
+            }))
         continue
       }
       default: {
@@ -77,7 +77,7 @@ export async function getChainHead (makeRpcRequest) {
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-export function getActorEventsFilter(blockHeight, eventTypeString) {
+export function getActorEventsFilter (blockHeight, eventTypeString) {
   // We only search for events in a single block
   return {
     fromHeight: blockHeight,

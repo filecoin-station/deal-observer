@@ -9,10 +9,9 @@ const encodeCborInBase64 = (data) => {
   return base64pad.baseEncode(cborEncode(data))
 }
 
-
 /**
  * Converts raw event entries into a typed event
- * 
+ *
  * @param {Array<{Key: string, Value: string}>} rawEventEntries
  * @return {{event: Object, eventType: string}} event
   */
