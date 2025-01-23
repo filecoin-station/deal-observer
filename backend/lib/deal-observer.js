@@ -47,7 +47,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 
   const start = Date.now()
   try {
-    // Start a transaction
     // Insert deals in a batch
     const insertQuery = `
         INSERT INTO active_deals (
