@@ -2,7 +2,6 @@ import { RPC_URL } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { decode as jsonDecode } from '@ipld/dag-json'
-import { request } from 'undici'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
@@ -16,14 +15,13 @@ import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
   */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-  const response = await request(RPC_URL, {
-    bodyTimeout: 1000 * 60,
-    headersTimeout: 1000 * 60,
+  const response = await fetch(RPC_URL, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: reqBody
   })
-  return jsonDecode(new Uint8Array(await response.body.arrayBuffer())).result
+  let result = await response.json()
+  return result.result
 }
 /**
      * @param {object} actorEventFilter
