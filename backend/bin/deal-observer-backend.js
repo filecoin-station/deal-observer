@@ -2,7 +2,6 @@ import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
 import timers from 'node:timers/promises'
 import slug from 'slug'
-import { RPC_URL, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
@@ -59,9 +58,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-Promise.all([
-  dealObserverLoop(
-    rpcRequest,
-    pgPool
-  )
-])
+await dealObserverLoop(
+  rpcRequest,
+  pgPool
+)

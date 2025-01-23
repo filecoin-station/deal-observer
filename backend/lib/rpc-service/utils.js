@@ -14,7 +14,7 @@ const encodeCborInBase64 = (data) => {
  *
  * @param {Array<{Key: string, Value: string}>} rawEventEntries
  * @return {{event: Object, eventType: string}} event
-  */
+ */
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}

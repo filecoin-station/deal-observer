@@ -30,8 +30,8 @@ export const rpcRequest = async (method, params) => {
      * Returns actor events filtered by the given actorEventFilter
      * @returns {Promise<Array<BlockEvent>>}
      */
-export async function getActorEvents(actorEventFilter, makeRpcRequest) {
-  const rawEvents = (await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+export async function getActorEvents (actorEventFilter, makeRpcRequest) {
+  const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
   if (!rawEvents || rawEvents.length === 0) {
     console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
@@ -69,7 +69,7 @@ export async function getActorEvents(actorEventFilter, makeRpcRequest) {
  * @param {function} makeRpcRequest
  * @returns {Promise<object>}
  */
-export async function getChainHead(makeRpcRequest) {
+export async function getChainHead (makeRpcRequest) {
   return await makeRpcRequest('Filecoin.ChainHead', [])
 }
 
@@ -77,7 +77,7 @@ export async function getChainHead(makeRpcRequest) {
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
-export function getActorEventsFilter(blockHeight, eventTypeString) {
+export function getActorEventsFilter (blockHeight, eventTypeString) {
   // We only search for events in a single block
   return {
     fromHeight: blockHeight,

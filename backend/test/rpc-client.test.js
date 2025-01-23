@@ -19,7 +19,7 @@ describe('RpcApiClient', () => {
     }
   }
 
-  it('test the retrieval of the chainHead', async () => {
+  it('retrieves the chainHead', async () => {
     const chainHead = await getChainHead(makeRpcRequest)
     assert(chainHead)
     const expected = parse(JSON.stringify(chainHeadTestData))
@@ -35,7 +35,7 @@ describe('RpcApiClient', () => {
         // Validate type
         const parsedEvent = Value.Parse(ClaimEvent, e.event)
         assert(parsedEvent, `Invalid claim event: ${JSON.stringify(e.event)}`)
-        assert(e.height >= 4622129 && e.height <= 4622139)
+        assert.strictEqual(e.height, blockHeight)
       })
     })
   }
