@@ -19,7 +19,7 @@ describe('RpcApiClient', () => {
     }
   }
 
-  it('test the retrieval of the chainHead', async () => {
+  it('retrieves the chainHead', async () => {
     const chainHead = await getChainHead(makeRpcRequest)
     assert(chainHead)
     const expected = parse(JSON.stringify(chainHeadTestData))
