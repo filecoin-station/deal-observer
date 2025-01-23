@@ -25,7 +25,8 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = (await pgPool.query(query)).rows.map((row) => { return Value.Parse(ActiveDealDbEntry, row) })
+  const { rows } = await pgPool.query(query)
+  const result = rows.map((row) => Value.Parse(ActiveDealDbEntry, row))
   return result.length > 0 ? result[0] : null
 }
 
