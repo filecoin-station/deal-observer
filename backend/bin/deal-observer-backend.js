@@ -56,9 +56,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-Promise.all([
-  dealObserverLoop(
-    rpcRequestFn,
-    pgPool
-  )
-])
+await dealObserverLoop(
+  rpcRequestFn,
+  pgPool
+)
