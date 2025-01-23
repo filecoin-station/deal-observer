@@ -5,10 +5,6 @@ const decodeCborInBase64 = (data) => {
   return cborDecode(base64pad.baseDecode(data))
 }
 
-const encodeCborInBase64 = (data) => {
-  return base64pad.baseEncode(cborEncode(data))
-}
-
 /**
  * Converts raw event entries into a typed event
  *
@@ -37,6 +33,5 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
 
 export {
   decodeCborInBase64,
-  encodeCborInBase64,
   rawEventEntriesToEvent
 }

@@ -16,6 +16,7 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
   const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
   assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
   console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
+  let g = JSON.stringify(activeDeals)
   await storeActiveDeals(activeDeals, pgPool)
 }
 
@@ -78,7 +79,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
     console.log(`Loop of inserting took ${Date.now() - time2}ms`)
     // Commit the transaction if all inserts are successful
     const time1 = Date.now()
-    console.log(`Inserting ${activeDeals.size} deals took ${time1 - time0}ms`)
+    console.log(`Inserting ${activeDeals.length} deals took ${time1 - time0}ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
     console.error('Error inserting deals. Rolling back:', error.message)

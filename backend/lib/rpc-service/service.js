@@ -74,6 +74,21 @@ export async function getChainHead (makeRpcRequest) {
 }
 
 /**
+ * @param {number} minerId
+ * @param {function} rpcRequestFn
+ * @returns {Promise<string>} 
+ */
+export async function getMinerPeerId(minerId, rpcRequestFn) {
+  try {
+    const params = getMinderInfoParameters(minerId)
+    const res = await rpcRequestFn('Filecoin.StateMinerInfo', params)
+    return res.PeerId
+  } catch (err) {
+    console.error(`Failed to get peer ID for miner ${minerId}:`, err)
+  }
+}
+
+/**
    * @param {number} blockHeight
    * @param {string} eventTypeString
    */
@@ -89,3 +104,14 @@ export function getActorEventsFilter (blockHeight, eventTypeString) {
     }
   }
 }
+
+/**
+ * 
+ * @param {number} minerId 
+ */
+export function getMinderInfoParameters(minerId){
+  return [
+    'f0'+minerId.toString(),
+    null
+  ]
+} 
