@@ -15,4 +15,5 @@ const app = createApp({
   logger: ['1', 'true'].includes(REQUEST_LOGGING)
 })
 console.log('Starting the http server on host %j port %s', HOST, PORT)
-console.log(await app.listen({ host: HOST, port: Number(PORT) }))
+const serverUrl = await app.listen({ host: HOST, port: Number(PORT) })
+console.log(serverUrl)
