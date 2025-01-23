@@ -14,7 +14,7 @@
   "dependencies": {
     "@filecoin-station/deal-observer-db": "^1.0.0",
     "@influxdata/influxdb-client": "^1.35.0",
-    "@sentry/node": "^8.48.0",
+    "@sentry/node": "^8.51.0",
     "@types/slug": "^5.0.9",
     "debug": "^4.4.0",
     "ethers": "^6.13.5",
