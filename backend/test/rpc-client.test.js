@@ -26,8 +26,8 @@ describe('RpcApiClient', () => {
     assert.deepStrictEqual(chainHead, expected)
   })
 
-  it('test the retrieval of rawActorEvents', async () => {
-    Array.from({ length: 11 }, (_, i) => 4622129 + i).flatMap(async (blockHeight) => {
+  for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {
+    it(`retrieves rawActorEvents in block ${blockHeight}`, async () => {
       const actorEvents = await getActorEvents(getActorEventsFilter(blockHeight, 'claim'), makeRpcRequest)
       assert(actorEvents)
       assert(actorEvents.length > 0)
@@ -37,7 +37,6 @@ describe('RpcApiClient', () => {
         assert(parsedEvent, `Invalid claim event: ${JSON.stringify(e.event)}`)
         assert(e.height >= 4622129 && e.height <= 4622139)
       })
-    }
-    )
-  })
+    })
+  }
 })

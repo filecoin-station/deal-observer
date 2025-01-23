@@ -21,7 +21,6 @@
     "@sinclair/typebox": "^0.34.14",
     "@types/slug": "^5.0.9",
     "debug": "^4.4.0",
-    "ethers": "^6.13.5",
     "multiformats": "^13.3.1",
     "pg": "^8.13.1",
     "request": "^2.88.2",

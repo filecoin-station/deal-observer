@@ -32,6 +32,9 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     }
     event[key] = value
   }
+  if (!eventType) {
+    console.error(`No event type found in the raw event entries. Event entries: ${JSON.stringify(event)}`)
+  }
   return { event, eventType }
 }
 
