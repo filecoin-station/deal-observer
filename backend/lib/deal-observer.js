@@ -61,7 +61,17 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_max,
           sector_id
         )
-        VALUES (unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::text[]), unnest($5::bigint[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[]), unnest($9::bigint[]))
+        VALUES (
+          unnest($1::int[]),
+          unnest($2::int[]), 
+          unnest($3::int[]), 
+          unnest($4::text[]), 
+          unnest($5::bigint[]), 
+          unnest($6::int[]), 
+          unnest($7::int[]), 
+          unnest($8::int[]), 
+          unnest($9::bigint[])
+        )
       `
     const time2 = Date.now()
     await pgPool.query(insertQuery, [
