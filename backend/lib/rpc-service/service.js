@@ -10,8 +10,8 @@ import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
 /**
  * @param {string} method
  * @param {Object} params
-  * @returns {Promise<object>}
-  */
+ * @returns {Promise<object>}
+ */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   const response = await fetch(RPC_URL, {

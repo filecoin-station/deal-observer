@@ -56,7 +56,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 
   const startInserting = Date.now()
   try {
-    // Start a transaction
     // Insert deals in a batch
     const insertQuery = `
         INSERT INTO active_deals (
@@ -70,7 +69,17 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_max,
           sector_id
         )
-        VALUES (unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::text[]), unnest($5::bigint[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[]), unnest($9::bigint[]))
+        VALUES (
+          unnest($1::int[]),
+          unnest($2::int[]), 
+          unnest($3::int[]), 
+          unnest($4::text[]), 
+          unnest($5::bigint[]), 
+          unnest($6::int[]), 
+          unnest($7::int[]), 
+          unnest($8::int[]), 
+          unnest($9::bigint[])
+        )
       `
     await pgPool.query(insertQuery, [
       transformedDeals.map(deal => deal.activated_at_epoch),
