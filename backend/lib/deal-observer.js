@@ -8,9 +8,9 @@ import { Value } from '@sinclair/typebox/value'
 /**
  * @param {number} blockHeight
  * @param {Queryable} pgPool
- * @param {Provider} makeRpcRequest
+ * @param {(method:string,params:object) => object} makeRpcRequest
  * @returns {Promise<void>}
-  */
+ */
 export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
   const eventType = 'claim'
   const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)

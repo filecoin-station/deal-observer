@@ -1,0 +1,2 @@
+ALTER TABLE active_deals
+ALTER COLUMN sector_id BIGINT NOT NULL; 

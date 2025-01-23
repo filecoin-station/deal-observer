@@ -1,25 +1,26 @@
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
-import { ethers } from 'ethers'
 import timers from 'node:timers/promises'
 import slug from 'slug'
-import { RPC_URL, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
-import { getChainHead, rpcRequestFn } from '../lib/rpc-service/service.js'
+import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
-// assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
+if (!INFLUXDB_TOKEN) {
+  console.error('INFLUXDB_TOKEN was not provided. Please set the INFLUXDB_TOKEN environment variable.')
+}
 const LOOP_BACK_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
+const maxPastEpochs = 1999
+assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 
-const fetchRequest = new ethers.FetchRequest(RPC_URL)
-fetchRequest.setHeader('Authorization', rpcHeaders.Authorization || '')
-const NAME = 'Built-in actor events'
+const LOOP_NAME = 'Built-in actor events'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const dealObserverLoop = async (makeRpcRequest, pgPool) => {
@@ -29,10 +30,11 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       // If the store is empty we set the lastEpochStore to 0 and start fetching from the current chain head
       const currentChainHead = await getChainHead(makeRpcRequest)
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
-      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height ?? currentFinalizedChainHead - 1
+      // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
+      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height ?? currentChainHead.Height - 1999
       if (lastEpochStored < currentFinalizedChainHead) {
         // TODO: The free plan does not allow for fetching epochs older than 2000 blocks. We need to account for that.
-        for (const epoch of Array.from({ length: currentFinalizedChainHead - lastEpochStored + 1 }, (_, i) => i + lastEpochStored)) {
+        for (let epoch = lastEpochStored + 1; lastEpochStored <= currentFinalizedChainHead; epoch++) {
           await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
         }
       }
@@ -41,11 +43,11 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop ${NAME}" took ${dt}ms`)
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    // Remove once influx db is enabled
+    // For local monitoring and debugging, we can omit sending data to InfluxDB
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(NAME, '_')}`, point => {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_BACK_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -56,9 +58,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-Promise.all([
-  dealObserverLoop(
-    rpcRequestFn,
-    pgPool
-  )
-])
+await dealObserverLoop(
+  rpcRequest,
+  pgPool
+)

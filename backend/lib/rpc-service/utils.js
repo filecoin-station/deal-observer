@@ -10,7 +10,7 @@ const decodeCborInBase64 = (data) => {
  *
  * @param {Array<{Key: string, Value: string}>} rawEventEntries
  * @return {{event: Object, eventType: string}} event
-  */
+ */
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}
@@ -27,6 +27,9 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
       continue
     }
     event[key] = value
+  }
+  if (!eventType) {
+    console.error(`No event type found in the raw event entries. Event entries: ${JSON.stringify(event)}`)
   }
   return { event, eventType }
 }

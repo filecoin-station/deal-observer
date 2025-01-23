@@ -7,7 +7,7 @@ CREATE TABLE active_deals (
   term_start_epoch INT NOT NULL,
   term_min INT NOT NULL,
   term_max INT NOT NULL,
-  sector_id BIGINT NOT NULL,
+  sector_id INT NOT NULL,
   payload_cid TEXT
 );
 

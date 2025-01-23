@@ -14,7 +14,7 @@ import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
  * @param {Object} params
   * @returns {Promise<object>}
   */
-export const rpcRequestFn = async (method, params) => {
+export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   const response = await request(RPC_URL, {
     bodyTimeout: 1000 * 60,
@@ -31,7 +31,7 @@ export const rpcRequestFn = async (method, params) => {
      * @returns {Promise<Array<BlockEvent>>}
      */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
-  const rawEvents = (await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+  const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
   if (!rawEvents || rawEvents.length === 0) {
     console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
@@ -45,7 +45,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
     // Verify the returned event matches the expected event schema
     let typedEvent
     switch (eventType) {
-      case 'claim':{
+      case 'claim': {
         typedEvent = Value.Parse(ClaimEvent, event)
         emittedEvents.push(
           Value.Parse(BlockEvent,
