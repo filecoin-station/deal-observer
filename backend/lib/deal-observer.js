@@ -1,9 +1,10 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-/** @import {Provider} from 'ethers' */
+/** @import { BlockEvent } from './rpc-service/data-types.js' */
 import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
+import { fromJSON, toJSON } from 'multiformats/cid'
 
 /**
  * @param {number} blockHeight
@@ -25,17 +26,26 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = (await pgPool.query(query)).rows.map((row) => { return Value.Parse(ActiveDealDbEntry, row) })
+  const result = (await pgPool.query(query)).rows.map((row) => {
+    const parsedRow = Value.Parse(ActiveDealDbEntry, row)
+    parsedRow.piece_cid = fromJSON(JSON.parse(parsedRow.piece_cid))
+    return parsedRow
+  })
   return result.length > 0 ? result[0] : null
 }
 
+/**
+ * @param {Array<BlockEvent>} activeDeals
+ * @param {Queryable} pgPool
+ * @returns {Promise<void>}
+ * */
 export async function storeActiveDeals (activeDeals, pgPool) {
   const transformedDeals = activeDeals.map((deal) => (
     {
       activated_at_epoch: deal.height,
       miner_id: deal.event.provider,
       client_id: deal.event.client,
-      piece_cid: deal.event.pieceCid,
+      piece_cid: toJSON(deal.event.pieceCid),
       piece_size: deal.event.pieceSize,
       term_start_epoch: deal.event.termStart,
       term_min: deal.event.termMin,
@@ -44,7 +54,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       payload_cid: null
     }))
 
-  const time0 = Date.now()
+  const startInserting = Date.now()
   try {
     // Start a transaction
     // Insert deals in a batch
@@ -62,7 +72,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
         )
         VALUES (unnest($1::int[]), unnest($2::int[]), unnest($3::int[]), unnest($4::text[]), unnest($5::bigint[]), unnest($6::int[]), unnest($7::int[]), unnest($8::int[]), unnest($9::bigint[]))
       `
-    const time2 = Date.now()
     await pgPool.query(insertQuery, [
       transformedDeals.map(deal => deal.activated_at_epoch),
       transformedDeals.map(deal => deal.miner_id),
@@ -75,12 +84,10 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       transformedDeals.map(deal => deal.sector_id)
     ])
 
-    console.log(`Loop of inserting took ${Date.now() - time2}ms`)
     // Commit the transaction if all inserts are successful
-    const time1 = Date.now()
-    console.log(`Inserting ${activeDeals.size} deals took ${time1 - time0}ms`)
+    console.log(`Inserting ${activeDeals.length} deals took ${Date.now() - startInserting}ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
-    console.error('Error inserting deals. Rolling back:', error.message)
+    console.error('Error inserting deals:', error.message)
   }
 }
