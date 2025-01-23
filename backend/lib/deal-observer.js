@@ -45,7 +45,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       payload_cid: null
     }))
 
-  const time0 = Date.now()
+  const start = Date.now()
   try {
     // Start a transaction
     // Insert deals in a batch
