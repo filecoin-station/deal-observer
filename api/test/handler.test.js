@@ -1,10 +1,8 @@
 import { after, before, describe, it } from 'node:test'
 
-import { createPgPool, migrateWithPgClient } from '../../db/index.js'
+import { createPgPool, migrateWithPgClient, DATABASE_URL } from '../../db/index.js'
 import { createApp } from '../lib/app.js'
 import { assertResponseStatus } from './test-helpers.js'
-
-const { DATABASE_URL = 'postgres://localhost:5432/spark_deal_observer' } = process.env
 
 describe('HTTP request handler', () => {
   /** @type {import('@filecoin-station/deal-observer-db').PgPool} */

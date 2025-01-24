@@ -2,8 +2,6 @@ import * as Sentry from '@sentry/node'
 import Fastify from 'fastify'
 import pg from '@fastify/postgres'
 
-/** @typedef {import('@filecoin-station/deal-observer-db').PgPool} PgPool */
-
 /**
  * @param {object} args
  * @param {string} args.DATABASE_URL

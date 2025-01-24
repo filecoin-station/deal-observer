@@ -1,11 +1,11 @@
 import '../lib/instrument.js'
 import { createApp } from '../lib/app.js'
+import { DATABASE_URL } from '@filecoin-station/deal-observer-db'
 
 const {
   PORT = '8080',
   HOST = '127.0.0.1',
-  REQUEST_LOGGING = 'true',
-  DATABASE_URL = 'postgres://localhost:5432/spark_deal_observer'
+  REQUEST_LOGGING = 'true'
 } = process.env
 
 const app = createApp({
