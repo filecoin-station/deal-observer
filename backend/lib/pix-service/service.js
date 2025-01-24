@@ -4,7 +4,7 @@ import { getMinerPeerId, rpcRequest } from '../rpc-service/service.js'
 
 /** @import {CID} from'multiformats' */
 
-export const pixRequestFn = async (providerId, pieceCid) => {
+export const pixRequest = async (providerId, pieceCid) => {
   const url = PIECE_INDEXER_URL + '/samples/' + providerId + '/' + pieceCid
   const response = await fetch(url, {
     method: 'GET',
@@ -22,7 +22,7 @@ export const pixRequestFn = async (providerId, pieceCid) => {
 export async function fetchPayloadCid (providerId, pieceCid, rpcRequestFn) {
   const minerPeerId = await getMinerPeerId(providerId, rpcRequestFn)
   const cid = pieceCid.toString()
-  const payloadCid = await pixRequestFn(minerPeerId, cid)
+  const payloadCid = await pixRequest(minerPeerId, cid)
   return payloadCid
 }
 

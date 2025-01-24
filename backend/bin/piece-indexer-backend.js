@@ -7,6 +7,7 @@ import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'node:assert'
+import { pixRequest } from '../lib/pix-service/service.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -22,13 +23,7 @@ const pieceIndexerLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
-      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height ??
-      if (lastEpochStored < currentFinalizedChainHead) {
-        // TODO: The free plan does not allow for fetching epochs older than 2000 blocks. We need to account for that.
-        for (let epoch = lastEpochStored + 1; lastEpochStored <= currentFinalizedChainHead; epoch++) {
-          await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
-        }
-      }
+      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -49,7 +44,7 @@ const pieceIndexerLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-await dealObserverLoop(
-  rpcRequest,
+await pieceIndexerLoop(
+pixRequest,
   pgPool
 )

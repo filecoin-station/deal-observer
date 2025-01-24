@@ -4,11 +4,11 @@ const ClaimEvent = Type.Object({
   client: Type.Number(),
   provider: Type.Number(),
   pieceCid: Type.Any(),
-  pieceSize: Type.Number(),
+  pieceSize: Type.BigInt(),
   termMin: Type.Number(),
   termMax: Type.Number(),
   termStart: Type.Number(),
-  sector: Type.Number()
+  sector: Type.BigInt()
 })
 
 const Entry = Type.Object({

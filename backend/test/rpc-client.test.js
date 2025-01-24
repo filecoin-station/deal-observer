@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parse } from '@ipld/dag-json'
-import { getActorEvents, getActorEventsFilter, getChainHead } from '../lib/rpc-service/service.js'
+import { getActorEvents, getActorEventsFilter, getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { ClaimEvent } from '../lib/rpc-service/data-types.js'
 import { Value } from '@sinclair/typebox/value'
 
@@ -34,9 +34,15 @@ describe('RpcApiClient', () => {
       actorEvents.forEach(e => {
         // Validate type
         const parsedEvent = Value.Parse(ClaimEvent, e.event)
-        assert(parsedEvent, `Invalid claim event: ${JSON.stringify(e.event)}`)
+        assert(parsedEvent)
         assert.strictEqual(e.height, blockHeight)
       })
     })
   }
+  it('smoketest for testing the real rpc api endpoint', async () => {
+    const chainHead = await getChainHead(rpcRequest)
+    assert(chainHead)
+    const actorEvents = await getActorEvents(getActorEventsFilter(chainHead.Height - 1000, 'claim'), rpcRequest)
+    assert(actorEvents)
+  })
 })

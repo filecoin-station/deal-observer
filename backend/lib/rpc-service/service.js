@@ -1,7 +1,6 @@
 import { RPC_URL } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
-import { decode as jsonDecode } from '@ipld/dag-json'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
@@ -11,8 +10,8 @@ import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
 /**
  * @param {string} method
  * @param {Object} params
-  * @returns {Promise<object>}
-  */
+ * @returns {Promise<object>}
+ */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   const response = await fetch(RPC_URL, {
@@ -20,14 +19,15 @@ export const rpcRequest = async (method, params) => {
     headers: { 'content-type': 'application/json' },
     body: reqBody
   })
-  let result = await response.json()
-  return result.result
+
+  // @ts-ignore
+  return (await response.json()).result
 }
 /**
-     * @param {object} actorEventFilter
-     * Returns actor events filtered by the given actorEventFilter
-     * @returns {Promise<Array<BlockEvent>>}
-     */
+ * @param {object} actorEventFilter
+ * Returns actor events filtered by the given actorEventFilter
+ * @returns {Promise<Array<BlockEvent>>}
+ */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
   const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
   if (!rawEvents || rawEvents.length === 0) {
