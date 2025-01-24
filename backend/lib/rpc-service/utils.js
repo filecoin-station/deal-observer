@@ -28,7 +28,7 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     }
 
     // Convert CID instanes to the string representation
-    if ( value[Symbol.toStringTag] === 'CID') {
+    if (value[Symbol.toStringTag] === 'CID') {
       value = value.toString()
     } else if (typeof value !== 'number') {
       console.error(`Unsupported type found in the raw event entries. Value enrtry: %o and key entry: ${key}, Unsupported type: ${typeof value}`, value)

@@ -9,7 +9,7 @@ import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '.
 import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
-if (INFLUXDB_TOKEN == "disabled") {
+if (INFLUXDB_TOKEN === 'disabled') {
   console.error('INFLUXDB_TOKEN has been disabled. Telemetry will not be recorded.')
 }
 const LOOP_INTERVAL = 10 * 1000
@@ -44,7 +44,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
     // For local monitoring and debugging, we can omit sending data to InfluxDB
-    if (INFLUXDB_TOKEN !== "disabled") {
+    if (INFLUXDB_TOKEN !== 'disabled') {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
