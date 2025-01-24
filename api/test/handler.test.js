@@ -18,7 +18,7 @@ describe('HTTP request handler', () => {
     await pgPool.end()
 
     app = createApp({
-      DATABASE_URL,
+      databaseUrl: DATABASE_URL,
       logger: {
         level: process.env.DEBUG === '*' || process.env.DEBUG?.includes('test')
           ? 'debug'

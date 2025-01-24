@@ -9,7 +9,7 @@ const {
 } = process.env
 
 const app = createApp({
-  DATABASE_URL,
+  databaseUrl: DATABASE_URL,
   logger: {
     level: ['1', 'true'].includes(REQUEST_LOGGING) ? 'info' : 'error'
   }

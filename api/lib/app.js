@@ -4,17 +4,17 @@ import pg from '@fastify/postgres'
 
 /**
  * @param {object} args
- * @param {string} args.DATABASE_URL
+ * @param {string} args.databaseUrl
  * @param {Fastify.FastifyLoggerOptions} args.logger
  * @returns
  */
 export const createApp = ({
-  DATABASE_URL,
+  databaseUrl,
   logger
 }) => {
   const app = Fastify({ logger })
   Sentry.setupFastifyErrorHandler(app)
-  app.register(pg, { connectionString: DATABASE_URL })
+  app.register(pg, { connectionString: databaseUrl })
   app.get('/', async function handler (request, reply) {
     return 'OK'
   })
