@@ -12,7 +12,9 @@ const pgPool = await createPgPool()
 
 const app = createApp({
   pgPool,
-  logger: ['1', 'true'].includes(REQUEST_LOGGING)
+  logger: {
+    level: ['1', 'true'].includes(REQUEST_LOGGING) ? 'info' : 'error'
+  }
 })
 console.log('Starting the http server on host %j port %s', HOST, PORT)
 const serverUrl = await app.listen({ host: HOST, port: Number(PORT) })

@@ -6,7 +6,7 @@ import Fastify from 'fastify'
 /**
  * @param {object} args
  * @param {PgPool} args.pgPool
- * @param {boolean} args.logger
+ * @param {Fastify.FastifyLoggerOptions} args.logger
  * @returns
  */
 export const createApp = ({

@@ -18,7 +18,11 @@ describe('HTTP request handler', () => {
 
     app = createApp({
       pgPool,
-      logger: false
+      logger: {
+        level: process.env.DEBUG === '*' || process.env.DEBUG?.includes('test')
+          ? 'debug'
+          : 'error'
+      }
     })
 
     baseUrl = await app.listen()
