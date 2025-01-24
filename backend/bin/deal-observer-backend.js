@@ -42,8 +42,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     const dt = Date.now() - start
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    // For local monitoring and debugging, we can omit sending data to InfluxDB
-    if (INFLUXDB_TOKEN !== 'disabled') {
+    if (!INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
