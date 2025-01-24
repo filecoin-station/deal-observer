@@ -15,8 +15,8 @@ export const createApp = ({
   logger
 }) => {
   const app = Fastify({ logger })
-  app.register(pg, { connectionString: DATABASE_URL })
   Sentry.setupFastifyErrorHandler(app)
+  app.register(pg, { connectionString: DATABASE_URL })
   app.get('/', async function handler (request, reply) {
     return 'OK'
   })
