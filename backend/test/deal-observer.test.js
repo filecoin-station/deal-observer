@@ -2,11 +2,9 @@ import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/deal-observer.js'
-import { CID } from 'multiformats'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { fromJSON } from 'multiformats/cid'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -28,7 +26,7 @@ describe('deal-observer-backend', () => {
       id: 1,
       provider: 2,
       client: 3,
-      pieceCid: CID.parse('baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi'),
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
       pieceSize: 4n,
       termStart: 5,
       termMin: 12340,
@@ -53,9 +51,7 @@ describe('deal-observer-backend', () => {
       sector_id: eventData.sector
     }
     const actualData = result.rows.map((record) => {
-      const parsedRecord = Value.Parse(ActiveDealDbEntry, record)
-      parsedRecord.piece_cid = fromJSON(JSON.parse(parsedRecord.piece_cid))
-      return parsedRecord
+      return Value.Parse(ActiveDealDbEntry, record)
     })
     assert.deepStrictEqual(actualData, [expectedData])
   })
@@ -64,7 +60,7 @@ describe('deal-observer-backend', () => {
       id: 1,
       provider: 2,
       client: 3,
-      pieceCid: CID.parse('baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi'),
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
       pieceSize: 4n,
       termStart: 5,
       termMin: 12340,
@@ -76,7 +72,6 @@ describe('deal-observer-backend', () => {
     // @ts-ignore
     await storeActiveDeals([event], pgPool)
     const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
-    expected.piece_cid = fromJSON(JSON.parse(expected.piece_cid))
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, actual)
   })

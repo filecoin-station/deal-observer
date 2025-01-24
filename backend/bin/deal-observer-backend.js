@@ -9,10 +9,10 @@ import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '.
 import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
-if (!INFLUXDB_TOKEN) {
-  console.error('INFLUXDB_TOKEN was not provided. Please set the INFLUXDB_TOKEN environment variable.')
+if (INFLUXDB_TOKEN === 'disabled') {
+  console.error('INFLUXDB_TOKEN has been disabled. Telemetry will not be recorded.')
 }
-const LOOP_BACK_INTERVAL = 10 * 1000
+const LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
@@ -27,7 +27,6 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
-      // If the store is empty we set the lastEpochStore to 0 and start fetching from the current chain head
       const currentChainHead = await getChainHead(makeRpcRequest)
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
@@ -45,14 +44,14 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
     // For local monitoring and debugging, we can omit sending data to InfluxDB
-    if (INFLUXDB_TOKEN) {
+    if (INFLUXDB_TOKEN !== 'disabled') {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', LOOP_BACK_INTERVAL)
+        point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
     }
-    if (dt < LOOP_BACK_INTERVAL) {
-      await timers.setTimeout(LOOP_BACK_INTERVAL - dt)
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
     }
   }
 }
