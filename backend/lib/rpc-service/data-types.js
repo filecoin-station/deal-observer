@@ -1,9 +1,10 @@
 import { Type } from '@sinclair/typebox'
+
 const ClaimEvent = Type.Object({
   id: Type.Number(),
   client: Type.Number(),
   provider: Type.Number(),
-  pieceCid: Type.Any(),
+  pieceCid: Type.String(),
   pieceSize: Type.BigInt(),
   termMin: Type.Number(),
   termMax: Type.Number(),

@@ -4,7 +4,6 @@ import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
-import { fromJSON, toJSON } from 'multiformats/cid'
 
 /**
  * @param {number} blockHeight
@@ -26,11 +25,7 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = (await pgPool.query(query)).rows.map((row) => {
-    const parsedRow = Value.Parse(ActiveDealDbEntry, row)
-    parsedRow.piece_cid = fromJSON(JSON.parse(parsedRow.piece_cid))
-    return parsedRow
-  })
+  const result = await parseDeals(pgPool, query)
   return result.length > 0 ? result[0] : null
 }
 
@@ -45,7 +40,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activated_at_epoch: deal.height,
       miner_id: deal.event.provider,
       client_id: deal.event.client,
-      piece_cid: toJSON(deal.event.pieceCid),
+      piece_cid: deal.event.pieceCid,
       piece_size: deal.event.pieceSize,
       term_start_epoch: deal.event.termStart,
       term_min: deal.event.termMin,
@@ -99,4 +94,17 @@ export async function storeActiveDeals (activeDeals, pgPool) {
     // If any error occurs, roll back the transaction
     console.error('Error inserting deals:', error.message)
   }
+}
+
+/**
+ * @param {Queryable} pgPool
+ * @param {string} query
+ * @returns {Promise<Array<ActiveDealDbEntry>>}
+ */
+async function parseDeals (pgPool, query) {
+  const result = (await pgPool.query(query)).rows.map(deal => {
+    return Value.Parse(ActiveDealDbEntry, deal)
+  }
+  )
+  return result
 }
