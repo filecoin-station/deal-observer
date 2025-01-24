@@ -4,6 +4,8 @@ import { createPgPool, migrateWithPgClient } from '../../db/index.js'
 import { createApp } from '../lib/app.js'
 import { assertResponseStatus } from './test-helpers.js'
 
+const { DATABASE_URL = 'postgres://localhost:5432/spark_deal_observer' } = process.env
+
 describe('HTTP request handler', () => {
   /** @type {import('@filecoin-station/deal-observer-db').PgPool} */
   let pgPool
@@ -15,9 +17,10 @@ describe('HTTP request handler', () => {
   before(async () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
+    pgPool.end()
 
     app = createApp({
-      pgPool,
+      DATABASE_URL,
       logger: {
         level: process.env.DEBUG === '*' || process.env.DEBUG?.includes('test')
           ? 'debug'
@@ -30,7 +33,6 @@ describe('HTTP request handler', () => {
 
   after(async () => {
     await app.close()
-    await pgPool.end()
   })
 
   /* TODO: database reset
