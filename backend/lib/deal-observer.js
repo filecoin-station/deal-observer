@@ -30,7 +30,7 @@ export async function fetchDealWithHighestActivatedEpoch (pgPool) {
 }
 
 /**
- * @param {Array<BlockEvent>} activeDeals
+ * @param {BlockEvent[]} activeDeals
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
