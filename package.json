@@ -32,8 +32,5 @@
     "prettier": "^3.4.2",
     "standard": "^17.1.2",
     "typescript": "^5.7.3"
-  },
-  "dependencies": {
-    "fastify": "^5.2.1"
   }
 }
