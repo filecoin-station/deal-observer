@@ -17,7 +17,7 @@ describe('HTTP request handler', () => {
   before(async () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
-    pgPool.end()
+    await pgPool.end()
 
     app = createApp({
       DATABASE_URL,
