@@ -9,8 +9,8 @@ import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '.
 import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
-if (INFLUXDB_TOKEN === 'disabled') {
-  console.error('INFLUXDB_TOKEN has been disabled. Telemetry will not be recorded.')
+if (!INFLUXDB_TOKEN) {
+  console.error('INFLUXDB_TOKEN not provided. Telemetry will not be recorded.')
 }
 const LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
