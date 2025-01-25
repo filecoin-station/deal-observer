@@ -30,7 +30,8 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       const currentChainHead = await getChainHead(makeRpcRequest)
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
-      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height ?? currentChainHead.Height - 1999
+      const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - 1999
       /* eslint-disable no-unmodified-loop-condition */
       for (let epoch = lastEpochStored + 1; lastEpochStored <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
