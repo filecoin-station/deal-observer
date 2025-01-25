@@ -1,5 +1,7 @@
+import { Value } from '@sinclair/typebox/value'
 import { PIECE_INDEXER_URL } from '../config.js'
 import { getMinerPeerId, rpcRequest } from '../rpc-service/service.js'
+import { RpcRespone } from './data-types.js'
 
 /**
  * @param {string} providerId
@@ -12,8 +14,7 @@ export const pixRequest = async (providerId, pieceCid) => {
     method: 'GET',
     headers: { 'content-type': 'application/json' }
   })
-  // @ts-ignore
-  return (await response.json()).result
+  return Value.Parse(RpcRespone,(await response.json())).result
 }
 
 /**

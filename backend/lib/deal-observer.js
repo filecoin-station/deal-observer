@@ -28,22 +28,22 @@ export async function updatePayloadCid(pgPool, makeRpcRequest, activeDeal) {
 
 /**
  * @param {Queryable} pgPool
- * @returns {Promise<ActiveDealDbEntry | null>}
+ * @returns {Promise<ActiveDealDbEntry | undefined>}
  */
 export async function fetchDealWithHighestActivatedEpoch(pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
   const result = await parseDeals(pgPool, query)
-  return result.length > 0 ? result[0] : null
+  return result.length > 0 ? result[0] : undefined
 }
 
 /**
  * @param {Queryable} pgPool
- * @returns {Promise<ActiveDealDbEntry | null>}
+ * @returns {Promise<ActiveDealDbEntry | undefined>}
  */
 export async function fetchDealWithLowestActivatedEpoch(pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch ASC LIMIT 1'
   const result = await parseDeals(pgPool, query)
-  return result.length > 0 ? result[0] : null
+  return result.length > 0 ? result[0] : undefined
 }
 
 
@@ -55,11 +55,11 @@ export async function fetchDealWithLowestActivatedEpoch(pgPool) {
 export async function fetchNextDealWithNoPayloadCid(pgPool, fromBlockHeight) {
   const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL WHERE activated_at_epoch >= ${fromBlockHeight} ORDER BY activated_at_epoch ASC LIM 1`
   const result = await parseDeals(pgPool, query)
-  return result.length > 0 ? result[0] : null
+  return result.length > 0 ? result[0] : undefined
 }
 
 /**
- * @param {Array<BlockEvent>} activeDeals
+ * @param {BlockEvent[]} activeDeals
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */

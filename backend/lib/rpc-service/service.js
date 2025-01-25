@@ -3,7 +3,7 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
-import { ClaimEvent, RawActorEvent, BlockEvent } from './data-types.js'
+import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
 
 /** @import {CID} from 'multiformats' */
 
@@ -20,8 +20,7 @@ export const rpcRequest = async (method, params) => {
     body: reqBody
   })
 
-  // @ts-ignore
-  return (await response.json()).result
+  return Value.Parse(RpcRespone, (await response.json())).result
 }
 /**
  * @param {object} actorEventFilter

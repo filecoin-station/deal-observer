@@ -9,8 +9,8 @@ import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '.
 import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
-if (INFLUXDB_TOKEN === 'disabled') {
-  console.error('INFLUXDB_TOKEN has been disabled. Telemetry will not be recorded.')
+if (!INFLUXDB_TOKEN) {
+  console.error('INFLUXDB_TOKEN not provided. Telemetry will not be recorded.')
 }
 const LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
@@ -30,8 +30,8 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       const currentChainHead = await getChainHead(makeRpcRequest)
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
-      const lastEpochStored = (await fetchDealWithHighestActivatedEpoch(pgPool)).height ?? currentChainHead.Height - 1999
-      // TODO: The free plan does not allow for fetching epochs older than 2000 blocks. We need to account for that.
+      let lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - 1999
       /* eslint-disable no-unmodified-loop-condition */
       for (let epoch = lastEpochStored + 1; lastEpochStored <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
@@ -43,8 +43,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     const dt = Date.now() - start
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    // For local monitoring and debugging, we can omit sending data to InfluxDB
-    if (INFLUXDB_TOKEN !== 'disabled') {
+    if (!INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)

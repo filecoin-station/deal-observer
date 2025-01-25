@@ -34,9 +34,14 @@ const BlockEvent = Type.Object({
   event: ClaimEvent
 })
 
+const RpcRespone = Type.Object({
+  result: Type.Any()
+})
+
 export {
   ClaimEvent,
   Entry,
   RawActorEvent,
-  BlockEvent
+  BlockEvent,
+  RpcRespone
 }
