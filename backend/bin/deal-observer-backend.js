@@ -43,7 +43,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     const dt = Date.now() - start
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    if (!INFLUXDB_TOKEN) {
+    if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
