@@ -1,20 +1,20 @@
 import * as Sentry from '@sentry/node'
 import Fastify from 'fastify'
-
-/** @typedef {import('@filecoin-station/deal-observer-db').PgPool} PgPool */
+import pg from '@fastify/postgres'
 
 /**
  * @param {object} args
- * @param {PgPool} args.pgPool
+ * @param {string} args.databaseUrl
  * @param {Fastify.FastifyLoggerOptions} args.logger
  * @returns
  */
 export const createApp = ({
-  pgPool,
+  databaseUrl,
   logger
 }) => {
   const app = Fastify({ logger })
   Sentry.setupFastifyErrorHandler(app)
+  app.register(pg, { connectionString: databaseUrl })
   app.get('/', async function handler (request, reply) {
     return 'OK'
   })

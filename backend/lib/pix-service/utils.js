@@ -15,33 +15,34 @@ const encodeInBase64 = (data) => {
  * @returns {Cache}
  */
 class Cache {
-  #maxSize;
-  #map;
-  #queue;
-  constructor(maxSize = 10000) {
-    this.maxSize = maxSize; 
-    this.map = new Map(); 
-    this.queue = [];
+  #maxSize
+  #map
+  #queue
+  constructor (maxSize = 10000) {
+    this.maxSize = maxSize
+    this.map = new Map()
+    this.queue = []
   }
+
   /**
    * Store a key-value pair in the cache. If the cache is full, remove least used entry.
-   * @param {K} key 
-   * @param {V} value 
+   * @param {K} key
+   * @param {V} value
    */
-  set(key, value) {
+  set (key, value) {
     // If the key already exists, delete it to update its position in the queue
     if (this.map.has(key)) {
-      this.#removeKeyFromQueue(key);
+      this.#removeKeyFromQueue(key)
     }
 
     // If the cache is full, remove the oldest entry
     if (this.queue.length >= this.maxSize) {
-      const oldestKey = this.queue.shift(); 
-      this.map.delete(oldestKey);
+      const oldestKey = this.queue.shift()
+      this.map.delete(oldestKey)
     }
 
-    this.queue.push(key);
-    this.map.set(key, value);
+    this.queue.push(key)
+    this.map.set(key, value)
   }
 
   /**
@@ -49,15 +50,15 @@ class Cache {
    * @param {K} key
    * @returns {V | null}
   */
-  get(key) {
+  get (key) {
     if (!this.map.has(key)) {
-      return null; // Key not found
+      return null // Key not found
     }
 
-    this.#removeKeyFromQueue(key);
-    this.queue.push(key);
+    this.#removeKeyFromQueue(key)
+    this.queue.push(key)
 
-    return this.map.get(key);
+    return this.map.get(key)
   }
 
   /**
@@ -65,8 +66,8 @@ class Cache {
    * @param {K} key
    * @returns {boolean}
    */
-  has(key) {
-    return this.map.has(key);
+  has (key) {
+    return this.map.has(key)
   }
 
   /**
@@ -74,10 +75,10 @@ class Cache {
    * @param {K} key
    * @returns {void}
    */
-  delete(key) {
+  delete (key) {
     if (this.map.has(key)) {
-      this.map.delete(key);
-      this.#removeKeyFromQueue(key);
+      this.map.delete(key)
+      this.#removeKeyFromQueue(key)
     }
   }
 
@@ -86,10 +87,10 @@ class Cache {
    * @param {K} key
    * @returns {void}
    */
-  #removeKeyFromQueue(key) {
-    const index = this.queue.indexOf(key);
+  #removeKeyFromQueue (key) {
+    const index = this.queue.indexOf(key)
     if (index > -1) {
-      this.queue.splice(index, 1);
+      this.queue.splice(index, 1)
     }
   }
 }

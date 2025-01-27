@@ -6,6 +6,9 @@ import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventTyActiveDealDbEntry } from '../lib/utils.js'
 import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
+import { makepixRequest, makeRpcRequest } from './utils.js'
+import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { pieceIndexerLoop } from '../bin/loops.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -119,5 +122,53 @@ describe('deal-observer-backend', () => {
     })
     assert.deepStrictEqual(actualData, [expectedData])
   })
+})
 
+describe('deal-observer-backend piece indexer binary', () => {
+  let pgPool
+  before(async () => {
+    pgPool = await createPgPool()
+    await migrateWithPgClient(pgPool)
+  })
+
+  after(async () => {
+    await pgPool.query('DELETE FROM active_deals')
+    await pgPool.end()
+  })
+
+  beforeEach(async () => {
+    await pgPool.query('DELETE FROM active_deals')
+    for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {
+      await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
+    }
+    const allDeals = await pgPool.query('SELECT * FROM active_deals')
+    assert.strictEqual(allDeals.rows.length, 360)
+  })
+
+  it('fetches payloadCid', async () => {
+    const worker = async () => {
+      await pieceIndexerLoop(
+        makeRpcRequest,
+        makepixRequest,
+        pgPool,
+        {
+          loopInterval: 1,
+          loopName: 'Piece Indexer',
+          queryLimit: 1000
+        }
+      )
+    }
+    // Timeout to kill the worker after 20 seconds
+    setTimeout(() => {
+      console.log('Condition not met, killing the worker.')
+      process.exit(1)
+    }, 20000)
+    worker()
+    while (true) {
+      const rows = (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows
+      if (rows.length === 0) {
+        process.exit(0)
+      }
+    }
+  })
 })

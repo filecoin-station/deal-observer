@@ -1,11 +1,10 @@
 import { Value } from '@sinclair/typebox/value'
 import { PIECE_INDEXER_URL } from '../config.js'
-import { getMinerPeerId, rpcRequest } from '../rpc-service/service.js'
+import { getMinerPeerId } from '../rpc-service/service.js'
 import { PixResponse } from './data-types.js'
-import { minerPeerIds } from '../../test/test_data/minerInfo.js'
 import { Cache } from './utils.js'
 
-const minerPeerIdsCache = new Cache();
+const minerPeerIdsCache = new Cache()
 
 /**
  * @param {string} providerId
@@ -27,19 +26,13 @@ export const pixRequest = async (providerId, pieceCid) => {
 * @returns {Promise<string>}
 */
 export async function fetchPayloadCid (providerId, pieceCid, rpcRequest, pixRequest) {
-  let minerPeerId;
+  let minerPeerId
   if (minerPeerIdsCache.has(providerId)) {
-    minerPeerId = minerPeerIdsCache.get(providerId);
-  }
-  else{
+    minerPeerId = minerPeerIdsCache.get(providerId)
+  } else {
     minerPeerId = await getMinerPeerId(providerId, rpcRequest)
-    minerPeerIdsCache.set(providerId, minerPeerId);
+    minerPeerIdsCache.set(providerId, minerPeerId)
   }
-  console.log(`Fetching payload CID for miner ${providerId} and piece ${pieceCid}`)
   const payloadCid = await pixRequest(minerPeerId, pieceCid)
-  console.log(`Payload CID for miner ${providerId} and piece ${pieceCid} is ${payloadCid}`)
   return payloadCid
 }
-
-
-

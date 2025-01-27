@@ -1,6 +1,6 @@
 import '../lib/instrument.js'
 import { createApp } from '../lib/app.js'
-import { createPgPool } from '@filecoin-station/deal-observer-db'
+import { DATABASE_URL } from '@filecoin-station/deal-observer-db'
 
 const {
   PORT = '8080',
@@ -8,10 +8,8 @@ const {
   REQUEST_LOGGING = 'true'
 } = process.env
 
-const pgPool = await createPgPool()
-
 const app = createApp({
-  pgPool,
+  databaseUrl: DATABASE_URL,
   logger: {
     level: ['1', 'true'].includes(REQUEST_LOGGING) ? 'info' : 'error'
   }

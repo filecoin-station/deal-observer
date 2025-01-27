@@ -4,6 +4,7 @@ import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
+import { fetchWithExponentialBackoff } from '../utils.js'
 
 /** @import { Static } from '@sinclair/typebox' */
 
@@ -14,12 +15,18 @@ import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-  const response = await fetch(RPC_URL, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: reqBody
-  })
-  return Value.Parse(RpcRespone, response.json()).result
+  try {
+    const response = await fetchWithExponentialBackoff(async () => {
+      return await fetch(RPC_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: reqBody
+      })
+    })
+    return Value.Parse(RpcRespone, response).result
+  } catch (e) {
+    console.error(`Failed to make RPC request: ${e.message}`)
+  }
 }
 /**
  * @param {object} actorEventFilter
