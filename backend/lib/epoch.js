@@ -12,8 +12,8 @@ export const unixToEpoch = (unixTimestamp) => {
 
 /**
  * Calculate the Filecoin epoch for a given date
- * 
- * @param {Date} date 
+ *
+ * @param {Date} date
  * @returns {number}
  */
 export const dateToEpoch = (date) => {

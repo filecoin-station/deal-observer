@@ -58,4 +58,3 @@ const calculateTerms = (startsAt, expiresAt) => {
 
   return { termStart, termMin: termEnd, termMax: termEnd }
 }
-

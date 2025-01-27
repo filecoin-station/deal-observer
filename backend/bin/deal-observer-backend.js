@@ -1,16 +1,12 @@
+import assert from 'node:assert'
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
-import { ethers } from 'ethers'
-import assert from 'node:assert/strict'
 import timers from 'node:timers/promises'
 import slug from 'slug'
-import { RPC_URL, rpcHeaders } from '../lib/config.js'
 import '../lib/instrument.js'
-import {
-  observeBuiltinActorEvents
-} from '../lib/deal-observer.js'
 import { createInflux } from '../lib/telemetry.js'
-import { submitEligibleDeals } from '../lib/deal-submitter.js'
+import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
+import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -18,50 +14,56 @@ const {
   DEAL_INGESTER_TOKEN
 } = process.env
 
-assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
+if (!INFLUXDB_TOKEN) {
+  console.error('INFLUXDB_TOKEN not provided. Telemetry will not be recorded.')
+}
 assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
 assert(DEAL_INGESTER_TOKEN, 'DEAL_INGESTER_TOKEN required')
 
+const LOOP_INTERVAL = 10 * 1000
+// Filecoin will need some epochs to reach finality.
+// We do not want to fetch deals that are newer than the current chain head - 940 epochs.
+const finalityEpochs = 940
+const maxPastEpochs = 1999
+
+assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 
-const fetchRequest = new ethers.FetchRequest(RPC_URL)
-fetchRequest.setHeader('Authorization', rpcHeaders.Authorization || '')
-const provider = new ethers.JsonRpcProvider(fetchRequest, null, { polling: true })
-
+const LOOP_NAME = 'Built-in actor events'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
-const loop = async (name, fn, interval) => {
+const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
-      await fn()
+      const currentChainHead = await getChainHead(makeRpcRequest)
+      const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
+      // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
+      const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - maxPastEpochs
+      for (let epoch = lastEpochStored + 1; epoch <= currentFinalizedChainHead; epoch++) {
+        await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
+      }
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${name}" took ${dt}ms`)
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    recordTelemetry(`loop_${slug(name, '_')}`, point => {
-      point.intField('interval_ms', interval)
-      point.intField('duration_ms', dt)
-    })
-
-    if (dt < interval) {
-      await timers.setTimeout(interval - dt)
+    if (INFLUXDB_TOKEN) {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+        point.intField('interval_ms', LOOP_INTERVAL)
+        point.intField('duration_ms', dt)
+      })
+    }
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
     }
   }
 }
 
-await Promise.all([
-  loop(
-    'Built-in actor events',
-    () => observeBuiltinActorEvents(pgPool, provider),
-    30_000
-  ),
-  loop(
-    'Report eligible deals',
-    () => submitEligibleDeals(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN),
-    30_000
-  )
-])
+await dealObserverLoop(
+  rpcRequest,
+  pgPool
+)

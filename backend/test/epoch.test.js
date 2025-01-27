@@ -2,7 +2,6 @@ import assert from 'node:assert'
 import { describe, it } from 'node:test'
 import { dateToEpoch } from '../lib/epoch.js'
 
-
 describe('epoch', () => {
   describe('dateToEpoch', () => {
     it('converts a date to an epoch', () => {
