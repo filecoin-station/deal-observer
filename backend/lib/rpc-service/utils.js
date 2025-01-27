@@ -30,7 +30,12 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     if (value[Symbol.toStringTag] === 'CID') {
       value = value.toString()
     } else if (typeof value !== 'number') {
-      console.error(`Unsupported type found in the raw event entries. Value enrtry: %o and key entry: ${key}, Unsupported type: ${typeof value}`, value)
+      console.error(
+        'Unsupported type %s found in the raw event entries. Key: %s Value: %o', 
+        typeof value,
+        key,
+        value
+      )
       continue
     }
 
