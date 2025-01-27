@@ -1,6 +1,6 @@
 import { after, before, describe, it } from 'node:test'
 
-import { createPgPool, migrateWithPgClient } from '../../db/index.js'
+import { createPgPool, migrateWithPgClient, DATABASE_URL } from '../../db/index.js'
 import { createApp } from '../lib/app.js'
 import { assertResponseStatus } from './test-helpers.js'
 
@@ -15,9 +15,10 @@ describe('HTTP request handler', () => {
   before(async () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
+    await pgPool.end()
 
     app = createApp({
-      pgPool,
+      databaseUrl: DATABASE_URL,
       logger: {
         level: process.env.DEBUG === '*' || process.env.DEBUG?.includes('test')
           ? 'debug'
@@ -30,7 +31,6 @@ describe('HTTP request handler', () => {
 
   after(async () => {
     await app.close()
-    await pgPool.end()
   })
 
   /* TODO: database reset
