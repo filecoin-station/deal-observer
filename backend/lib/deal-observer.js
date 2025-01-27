@@ -52,6 +52,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
     }))
 
   try {
+    const startInserting = Date.now()
     // Insert deals in a batch
     const insertQuery = `
         INSERT INTO active_deals (
@@ -88,6 +89,9 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       transformedDeals.map(deal => deal.term_max),
       transformedDeals.map(deal => deal.sector_id)
     ])
+    if (activeDeals.length > 0) {
+      console.log(`Inserted ${activeDeals.length} deals in ${Date.now() - startInserting} ms`)
+    }
   } catch (error) {
     // If any error occurs, roll back the transaction
     // TODO: Add sentry entry for this error
