@@ -10,9 +10,17 @@ import {
   observeBuiltinActorEvents
 } from '../lib/deal-observer.js'
 import { createInflux } from '../lib/telemetry.js'
+import { submitEligibleDeals } from '../lib/deal-reporter.js' 
 
-const { INFLUXDB_TOKEN } = process.env
+const { 
+  INFLUXDB_TOKEN,
+  SPARK_API_BASE_URL,
+  DEAL_INGESTER_TOKEN
+} = process.env
+
 assert(INFLUXDB_TOKEN, 'INFLUXDB_TOKEN required')
+assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
+assert(DEAL_INGESTER_TOKEN, 'DEAL_INGESTER_TOKEN required')
 
 const pgPool = await createPgPool()
 
@@ -49,6 +57,11 @@ await Promise.all([
   loop(
     'Built-in actor events',
     () => observeBuiltinActorEvents(pgPool, provider),
+    30_000
+  ),
+  loop(
+    'Report eligible deals',
+    () => submitEligibleDeals(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN),
     30_000
   )
 ])

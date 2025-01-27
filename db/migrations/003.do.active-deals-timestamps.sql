@@ -1,0 +1,3 @@
+ALTER TABLE active_deals 
+    ADD COLUMN submitted_at TIMESTAMP,
+    ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
