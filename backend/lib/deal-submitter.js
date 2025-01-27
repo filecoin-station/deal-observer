@@ -31,7 +31,7 @@ export const submitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngesterT
  * @param {number} batchSize
  * @returns {AsyncGenerator<Array>}
  */
-async function * findEligibleDeals (pgPool, batchSize) {
+const findEligibleDeals = async function* (pgPool, batchSize) {
   const client = await pgPool.connect()
   const cursor = client.query(new Cursor(`
       SELECT * FROM active_deals
@@ -43,7 +43,7 @@ async function * findEligibleDeals (pgPool, batchSize) {
   while (rows.length > 0) {
     yield rows
 
-    rows = cursor.read(batchSize)
+    rows = await cursor.read(batchSize)
   }
 
   client.release()
@@ -54,7 +54,7 @@ async function * findEligibleDeals (pgPool, batchSize) {
  * @param {Array} eligibleDeals
  */
 
-async function setEligibleDealsSubmitted (pgPool, eligibleDeals) {
+const setEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
     UPDATE active_deals
     SET submitted_at = NOW()
