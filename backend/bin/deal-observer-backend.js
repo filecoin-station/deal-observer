@@ -31,7 +31,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - 1999
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - maxPastEpochs
       /* eslint-disable no-unmodified-loop-condition */
       for (let epoch = lastEpochStored + 1; lastEpochStored <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
@@ -43,7 +43,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     const dt = Date.now() - start
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
-    if (!INFLUXDB_TOKEN) {
+    if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)

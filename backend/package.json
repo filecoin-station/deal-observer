@@ -16,12 +16,11 @@
     "@influxdata/influxdb-client": "^1.35.0",
     "@ipld/dag-cbor": "^9.2.2",
     "@ipld/dag-json": "^10.2.3",
-    "@ipld/schema": "^6.0.5",
     "@sentry/node": "^8.48.0",
     "@sinclair/typebox": "^0.34.14",
-    "@types/slug": "^5.0.9",
     "debug": "^4.4.0",
     "multiformats": "^13.3.1",
-    "pg": "^8.13.1"
+    "pg": "^8.13.1",
+    "slug": "^10.0.0"
   }
 }

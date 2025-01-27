@@ -1,5 +1,7 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { BlockEvent } from './rpc-service/data-types.js' */
+/** @import { Static } from '@sinclair/typebox' */
+
 import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
@@ -32,7 +34,7 @@ export async function updatePayloadCid (pgPool, makeRpcRequest, activeDeal) {
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = await parseDeals(pgPool, query)
+  const result = await loadDeals(pgPool, query)
   return result.length > 0 ? result[0] : undefined
 }
 
@@ -42,7 +44,7 @@ export async function fetchDealWithHighestActivatedEpoch (pgPool) {
  */
 export async function fetchDealWithLowestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch ASC LIMIT 1'
-  const result = await parseDeals(pgPool, query)
+  const result = await loadDeals(pgPool, query)
   return result.length > 0 ? result[0] : undefined
 }
 
@@ -53,12 +55,12 @@ export async function fetchDealWithLowestActivatedEpoch (pgPool) {
  */
 export async function fetchNextDealWithNoPayloadCid (pgPool, fromBlockHeight) {
   const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL WHERE activated_at_epoch >= ${fromBlockHeight} ORDER BY activated_at_epoch ASC LIM 1`
-  const result = await parseDeals(pgPool, query)
+  const result = await loadDeals(pgPool, query)
   return result.length > 0 ? result[0] : undefined
 }
 
 /**
- * @param {BlockEvent[]} activeDeals
+ * @param {Static<typeof BlockEvent>[]} activeDeals
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
@@ -134,6 +136,8 @@ export async function storeActiveDeals (activeDeals, pgPool) {
     console.log(`Inserting ${activeDeals.length} deals took ${Date.now() - startInserting}ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
+    // TODO: Add sentry entry for this error
+    // https://github.com/filecoin-station/deal-observer/issues/28
     console.error('Error inserting deals:', error.message)
   }
 }
@@ -143,7 +147,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
  * @param {string} query
  * @returns {Promise<Array<ActiveDealDbEntry>>}
  */
-async function parseDeals (pgPool, query) {
+async function loadDeals (pgPool, query) {
   const result = (await pgPool.query(query)).rows.map(deal => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {

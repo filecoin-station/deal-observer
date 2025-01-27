@@ -14,7 +14,6 @@ const decodeCborInBase64 = (data) => {
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}
-  // TODO handle if there is no type entry
   let eventType
   for (const entry of rawEventEntries) {
     // The key returned by the Lotus API is kebab-case, we convert it to camelCase
@@ -31,7 +30,12 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     if (value[Symbol.toStringTag] === 'CID') {
       value = value.toString()
     } else if (typeof value !== 'number') {
-      console.error(`Unsupported type found in the raw event entries. Value enrtry: %o and key entry: ${key}, Unsupported type: ${typeof value}`, value)
+      console.error(
+        'Unsupported type %s found in the raw event entries. Key: %s Value: %o',
+        typeof value,
+        key,
+        value
+      )
       continue
     }
 

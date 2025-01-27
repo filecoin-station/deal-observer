@@ -15,7 +15,10 @@
             "program": "${workspaceFolder}/backend/bin/deal-observer-backend.js",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"
-            ]
+            ],
+            "env":{
+                "GLIF_TOKEN": "-hDnZyQ3W1GAtR0h0BgxEPPkswiKMtcIJT-rjJXdWzA="
+            }
         }
     ]
 }
