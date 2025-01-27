@@ -36,7 +36,6 @@ describe('deal-observer-backend', () => {
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
-    // @ts-ignore
     await storeActiveDeals([event], pgPool)
     const result = await pgPool.query('SELECT * FROM active_deals')
     const expectedData = {
@@ -69,7 +68,6 @@ describe('deal-observer-backend', () => {
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
-    // @ts-ignore
     await storeActiveDeals([event], pgPool)
     const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
