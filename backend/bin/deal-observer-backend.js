@@ -10,7 +10,7 @@ import {
   observeBuiltinActorEvents
 } from '../lib/deal-observer.js'
 import { createInflux } from '../lib/telemetry.js'
-import { submitEligibleDeals } from '../lib/deal-reporter.js' 
+import { submitEligibleDeals } from '../lib/deal-submitter.js' 
 
 const { 
   INFLUXDB_TOKEN,
