@@ -14,7 +14,6 @@ const decodeCborInBase64 = (data) => {
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   const event = {}
-  // TODO handle if there is no type entry
   let eventType
   for (const entry of rawEventEntries) {
     // The key returned by the Lotus API is kebab-case, we convert it to camelCase
