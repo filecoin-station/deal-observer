@@ -10,9 +10,9 @@ import {
   observeBuiltinActorEvents
 } from '../lib/deal-observer.js'
 import { createInflux } from '../lib/telemetry.js'
-import { submitEligibleDeals } from '../lib/deal-submitter.js' 
+import { submitEligibleDeals } from '../lib/deal-submitter.js'
 
-const { 
+const {
   INFLUXDB_TOKEN,
   SPARK_API_BASE_URL,
   DEAL_INGESTER_TOKEN

@@ -7,29 +7,32 @@ import Cursor from 'pg-cursor'
  * @param {string} dealIngesterToken
  */
 export const submitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngesterToken) => {
-  const submitURL = `${sparkApiBaseURL}/eligible-deals-batch`
+  // const submitURL = `${sparkApiBaseURL}/eligible-deals-batch`
   for await (const eligibleDeals of findEligibleDeals(pgPool, 100)) {
-    fetch(submitURL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${dealIngesterToken}`
-      },
-      body: JSON.stringify(eligibleDeals)
-    })
+    // fetch(submitURL, {
+    //   method: 'POST',
+    //   headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': `Bearer ${dealIngesterToken}`
+    //   },
+    //   body: JSON.stringify(eligibleDeals)
+    // })
 
     setEligibleDealsSubmitted(pgPool, eligibleDeals)
   }
 }
 
-
 /**
+ * Find deals that are eligible to be submitted to a spark api.
+ * Eligible deals are those that have not been submitted yet,
+ * were created more than 2 days ago, and have not yet expired.
+ *
  * @param {PgPool} pgPool
  * @param {number} batchSize
  * @returns {AsyncGenerator<Array>}
  */
-async function* findEligibleDeals(pgPool, batchSize) {
-  const client = await pgPool.connect();
+async function * findEligibleDeals (pgPool, batchSize) {
+  const client = await pgPool.connect()
   const cursor = client.query(new Cursor(`
       SELECT * FROM active_deals
       WHERE submitted_at IS NULL AND created_at < NOW() - INTERVAL '2 days'
@@ -46,13 +49,12 @@ async function* findEligibleDeals(pgPool, batchSize) {
   client.release()
 }
 
-
 /**
  * @param {Queryable} pgPool
  * @param {Array} eligibleDeals
  */
 
-async function setEligibleDealsSubmitted(pgPool, eligibleDeals) {
+async function setEligibleDealsSubmitted (pgPool, eligibleDeals) {
   await pgPool.query(`
     UPDATE active_deals
     SET submitted_at = NOW()
