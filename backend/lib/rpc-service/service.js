@@ -5,7 +5,7 @@ import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
 
-/** @import {CID} from 'multiformats' */
+/** @import { Static } from '@sinclair/typebox' */
 
 /**
  * @param {string} method
@@ -25,7 +25,7 @@ export const rpcRequest = async (method, params) => {
 /**
  * @param {object} actorEventFilter
  * Returns actor events filtered by the given actorEventFilter
- * @returns {Promise<Array<BlockEvent>>}
+ * @returns {Promise<Array<Static<typeof BlockEvent>>>}
  */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
   const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])

@@ -1,5 +1,7 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { BlockEvent } from './rpc-service/data-types.js' */
+/** @import { Static } from '@sinclair/typebox' */
+
 import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
@@ -30,7 +32,7 @@ export async function fetchDealWithHighestActivatedEpoch (pgPool) {
 }
 
 /**
- * @param {BlockEvent[]} activeDeals
+ * @param {Static<typeof BlockEvent>[]} activeDeals
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
