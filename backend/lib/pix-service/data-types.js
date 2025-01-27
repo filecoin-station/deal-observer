@@ -1,9 +1,9 @@
 import { Type } from '@sinclair/typebox'
 
-const RpcRespone = Type.Object({
-  result: Type.String()
+const PixResponse = Type.Object({
+  samples: Type.Array(Type.String())
 })
 
 export {
-  RpcRespone
+  PixResponse
 }

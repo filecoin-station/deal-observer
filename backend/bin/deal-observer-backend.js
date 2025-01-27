@@ -5,8 +5,9 @@ import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
-import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'node:assert'
+import { fetchDealWithHighestActivatedEpoch } from '@filecoin-station/deal-observer-db/lib/database-access.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {

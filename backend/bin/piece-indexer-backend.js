@@ -4,10 +4,11 @@ import timers from 'node:timers/promises'
 import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
-import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
-import { fetchNextDealWithNoPayloadCid, fetchDealWithHighestActivatedEpoch, fetchDealWithLowestActivatedEpoch, observeBuiltinActorEvents, updatePayloadCid } from '../lib/deal-observer.js'
+import { rpcRequest } from '../lib/rpc-service/service.js'
+import { updatePayloadCid } from '../lib/deal-observer.js'
 import assert from 'node:assert'
 import { pixRequest } from '../lib/pix-service/service.js'
+import { fetchDealWithLowestActivatedEpoch, fetchNextDealWithNoPayloadCid } from '@filecoin-station/deal-observer-db/lib/database-access.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -19,8 +20,8 @@ const pgPool = await createPgPool()
 const LOOP_NAME = 'Piece Indexer'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
-const pieceIndexerLoop = async (makeRpcRequest, pgPool) => {
-  const processingBlockHeight = (await fetchDealWithLowestActivatedEpoch(pgPool)).height
+const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool) => {
+  let processingBlockHeight = (await fetchDealWithLowestActivatedEpoch(pgPool)).activated_at_epoch
   while (true) {
     const start = Date.now()
     try {
@@ -32,7 +33,8 @@ const pieceIndexerLoop = async (makeRpcRequest, pgPool) => {
           console.log('No deals with missing payload CID found, skipping piece indexing loop.')
         } else {
           console.log(`Found deals with missing payload CID at block height ${nextdealWithMissingPayloadCid.activated_at_epoch}`)
-          await updatePayloadCid(pgPool, pixRequest, nextdealWithMissingPayloadCid)
+          await updatePayloadCid(pgPool, rpcRequest, nextdealWithMissingPayloadCid, pixRequest)
+          processingBlockHeight = nextdealWithMissingPayloadCid.activated_at_epoch
         }
       }
     } catch (e) {
@@ -56,6 +58,7 @@ const pieceIndexerLoop = async (makeRpcRequest, pgPool) => {
 }
 
 await pieceIndexerLoop(
+  rpcRequest,
   pixRequest,
   pgPool
 )

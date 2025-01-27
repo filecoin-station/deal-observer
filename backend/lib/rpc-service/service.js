@@ -19,8 +19,7 @@ export const rpcRequest = async (method, params) => {
     headers: { 'content-type': 'application/json' },
     body: reqBody
   })
-
-  return Value.Parse(RpcRespone, (await response.json())).result
+  return Value.Parse(RpcRespone, response.json()).result
 }
 /**
  * @param {object} actorEventFilter
