@@ -34,6 +34,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
     return []
   }
   // TODO: handle reverted events
+  // https://github.com/filecoin-station/deal-observer/issues/22
   const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent))
   // An emitted event contains the height at which it was emitted, the emitter and the event itself
   const emittedEvents = []

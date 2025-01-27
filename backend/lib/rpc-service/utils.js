@@ -31,7 +31,7 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
       value = value.toString()
     } else if (typeof value !== 'number') {
       console.error(
-        'Unsupported type %s found in the raw event entries. Key: %s Value: %o', 
+        'Unsupported type %s found in the raw event entries. Key: %s Value: %o',
         typeof value,
         key,
         value
