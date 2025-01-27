@@ -2,7 +2,6 @@
 /** @import { BlockEvent } from './rpc-service/data-types.js' */
 /** @import { Static } from '@sinclair/typebox' */
 
-import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
@@ -16,8 +15,9 @@ import { Value } from '@sinclair/typebox/value'
 export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
   const eventType = 'claim'
   const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
-  assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
-  console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
+  if (activeDeals.length > 0) {
+    console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
+  }
   await storeActiveDeals(activeDeals, pgPool)
 }
 
@@ -51,7 +51,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       payload_cid: null
     }))
 
-  const startInserting = Date.now()
   try {
     // Insert deals in a batch
     const insertQuery = `
@@ -89,9 +88,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       transformedDeals.map(deal => deal.term_max),
       transformedDeals.map(deal => deal.sector_id)
     ])
-
-    // Commit the transaction if all inserts are successful
-    console.log(`Inserting ${activeDeals.length} deals took ${Date.now() - startInserting}ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
     // TODO: Add sentry entry for this error
