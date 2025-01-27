@@ -1,8 +1,6 @@
 import '../lib/instrument.js'
-import http from 'node:http'
-import { once } from 'node:events'
-import { createHandler } from '../lib/handler.js'
-import { createPgPool } from '@filecoin-station/deal-observer-db'
+import { createApp } from '../lib/app.js'
+import { DATABASE_URL } from '@filecoin-station/deal-observer-db'
 
 const {
   PORT = '8080',
@@ -10,16 +8,12 @@ const {
   REQUEST_LOGGING = 'true'
 } = process.env
 
-const pgPool = await createPgPool()
-const logger = {
-  error: console.error,
-  info: console.info,
-  request: ['1', 'true'].includes(REQUEST_LOGGING) ? console.info : () => {}
-}
-
-const handler = createHandler({ pgPool, logger })
-const server = http.createServer(handler)
+const app = createApp({
+  databaseUrl: DATABASE_URL,
+  logger: {
+    level: ['1', 'true'].includes(REQUEST_LOGGING) ? 'info' : 'error'
+  }
+})
 console.log('Starting the http server on host %j port %s', HOST, PORT)
-server.listen(Number(PORT), HOST)
-await once(server, 'listening')
-console.log(`http://${HOST}:${PORT}`)
+const serverUrl = await app.listen({ host: HOST, port: Number(PORT) })
+console.log(serverUrl)

@@ -72,3 +72,7 @@ export const migrateWithPgClient = async (client) => {
 
   console.log('Migrated `spark_deal_observer` DB schema to version', await postgrator.getDatabaseVersion())
 }
+
+export {
+  DATABASE_URL
+}

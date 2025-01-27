@@ -12,12 +12,13 @@
     "standard": "^17.1.2"
   },
   "dependencies": {
+    "@fastify/postgres": "^6.0.2",
     "@filecoin-station/deal-observer-db": "^1.0.0",
     "@sentry/node": "^8.48.0",
     "@sentry/profiling-node": "^8.51.0",
     "debug": "^4.4.0",
+    "fastify": "^5.2.1",
     "http-assert": "^1.5.0",
-    "http-responders": "^2.1.0",
     "pg": "^8.13.1"
   }
 }

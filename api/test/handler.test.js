@@ -1,45 +1,36 @@
-import createDebug from 'debug'
-import { once } from 'node:events'
-import http from 'node:http'
 import { after, before, describe, it } from 'node:test'
 
-import { createPgPool, migrateWithPgClient } from '../../db/index.js'
-import { createHandler } from '../lib/handler.js'
-import { assertResponseStatus, getPort } from './test-helpers.js'
-
-const debug = createDebug('test')
+import { createPgPool, migrateWithPgClient, DATABASE_URL } from '../../db/index.js'
+import { createApp } from '../lib/app.js'
+import { assertResponseStatus } from './test-helpers.js'
 
 describe('HTTP request handler', () => {
   /** @type {import('@filecoin-station/deal-observer-db').PgPool} */
   let pgPool
-  /** @type {http.Server} */
-  let server
+  /** @type {import('fastify').FastifyInstance} */
+  let app
   /** @type {string} */
   let baseUrl
 
   before(async () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
+    await pgPool.end()
 
-    const handler = createHandler({
-      pgPool,
+    app = createApp({
+      databaseUrl: DATABASE_URL,
       logger: {
-        info: debug,
-        error: console.error,
-        request: debug
+        level: process.env.DEBUG === '*' || process.env.DEBUG?.includes('test')
+          ? 'debug'
+          : 'error'
       }
     })
 
-    server = http.createServer(handler)
-    server.listen()
-    await once(server, 'listening')
-    baseUrl = `http://127.0.0.1:${getPort(server)}`
+    baseUrl = await app.listen()
   })
 
   after(async () => {
-    server.closeAllConnections()
-    server.close()
-    await pgPool.end()
+    await app.close()
   })
 
   /* TODO: database reset
