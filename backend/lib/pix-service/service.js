@@ -14,7 +14,7 @@ export const pixRequest = async (providerId, pieceCid) => {
     method: 'GET',
     headers: { 'content-type': 'application/json' }
   })
-  return Value.Parse(RpcRespone,(await response.json())).result
+  return Value.Parse(RpcRespone, (await response.json())).result
 }
 
 /**

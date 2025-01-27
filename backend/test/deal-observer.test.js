@@ -14,6 +14,7 @@ describe('deal-observer-backend', () => {
   })
 
   after(async () => {
+    await pgPool.query('DELETE FROM active_deals')
     await pgPool.end()
   })
 
@@ -32,7 +33,7 @@ describe('deal-observer-backend', () => {
       termMin: 12340,
       termMax: 12340,
       sector: 6n,
-      payload_cid: null // not present in event data
+      payload_cid: undefined // not present in event data
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
@@ -48,9 +49,11 @@ describe('deal-observer-backend', () => {
       term_start_epoch: eventData.termStart,
       term_min: eventData.termMin,
       term_max: eventData.termMax,
-      sector_id: eventData.sector
+      sector_id: eventData.sector,
+      payload_cid: undefined
     }
     const actualData = result.rows.map((record) => {
+      record.payload_cid = undefined
       return Value.Parse(ActiveDealDbEntry, record)
     })
     assert.deepStrictEqual(actualData, [expectedData])
@@ -65,13 +68,17 @@ describe('deal-observer-backend', () => {
       termStart: 5,
       termMin: 12340,
       termMax: 12340,
-      sector: 6n
+      sector: 6n,
+      payload_cid: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
     // @ts-ignore
     await storeActiveDeals([event], pgPool)
-    const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
+    const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows.map(deal => {
+      deal.payload_cid = undefined
+      return deal
+    })[0])
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, actual)
   })
