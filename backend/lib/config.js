@@ -13,7 +13,7 @@ console.log(`Selected JSON-RPC endpoint ${RPC_URL}`)
 const rpcHeaders = {}
 if (RPC_URL.includes('glif')) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
-  console.log('Configured GIF Token for JSON-RPC endpoint')
+  console.log('Configured GLIF Token for JSON-RPC endpoint')
 } else if (RPC_URL.includes('zondax')) {
   rpcHeaders.Authorization = `Bearer ${ZONDAX_TOKEN}`
   console.log('Configured Zondax Token for JSON-RPC endpoint')
