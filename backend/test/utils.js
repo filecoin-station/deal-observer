@@ -20,5 +20,7 @@ export const makeRpcRequest = async (method, params) => {
 export const makepixRequest = async (providerId, pieceCid) => {
   const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
   // TODO: handle the case where the payloadCid is not found
+  // For now we return a default payloadCid if there is a missing payload CID
+  // See https://github.com/filecoin-station/deal-observer/pull/31
   return payloadCid ? payloadCid.payloadCid : 'baga6ea4seaqepbqg7dxrdphrvusy3pmc5lelcczwwi5nydduyog655wgnby4ijq'
 }

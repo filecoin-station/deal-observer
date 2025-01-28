@@ -145,7 +145,7 @@ describe('deal-observer-backend piece indexer binary', () => {
     assert.strictEqual(allDeals.rows.length, 360)
   })
 
-  it('fetches payloadCid', async () => {
+  it('loop fetches payloads CIDs and updates them in the storage', async () => {
     const worker = async () => {
       await pieceIndexerLoop(
         makeRpcRequest,

@@ -25,6 +25,6 @@ await dealObserverLoop(
     recordTelemetry,
     loopName: 'Built-in actor events',
     influxDbToken: INFLUXDB_TOKEN,
-    loopInterval: 100 * 1000
+    loopInterval: 100_000
   }
 )

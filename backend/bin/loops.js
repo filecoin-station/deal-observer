@@ -1,9 +1,10 @@
 import { fetchDealWithHighestActivatedEpoch, fetchDealWithLowestActivatedEpoch, fetchDealsWithNoPayloadCid } from '@filecoin-station/deal-observer-db/lib/database-access.js'
-import { observeBuiltinActorEvents, updatePayloadCid as updatePayloadCids } from '../lib/deal-observer.js'
+import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { getChainHead } from '../lib/rpc-service/service.js'
 import slug from 'slug'
 import timers from 'node:timers/promises'
 import * as Sentry from '@sentry/node'
+import { updatePayloadCids } from '../lib/piece-indexer.js'
 
 export const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool, options) => {
   const LOOP_NAME = 'Piece Indexer'
@@ -16,12 +17,12 @@ export const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool, options) 
         dealWithLowestActivatedEpoch = (await fetchDealWithLowestActivatedEpoch(pgPool))
         processingBlockHeight = dealWithLowestActivatedEpoch ? dealWithLowestActivatedEpoch.activated_at_epoch : undefined
         if (processingBlockHeight === undefined) {
-          console.log('No deals found, skipping piece indexing loop.')
+          console.log('No deals found in database, waiting for observer loop to insert active deals.')
         }
       } else {
         const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, processingBlockHeight, options.queryLimit)
         if (dealsWithMissingPayloadCid === null) {
-          console.log('No deals with missing payload CID found, skipping piece indexing loop.')
+          console.log('No deals with missing payload CID found')
         } else {
           console.log(`Found ${dealsWithMissingPayloadCid.length} deals with missing payload CID`)
           await updatePayloadCids(pgPool, rpcRequest, dealsWithMissingPayloadCid, pixRequest)
