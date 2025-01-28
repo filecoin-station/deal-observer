@@ -7,10 +7,11 @@ import Cursor from 'pg-cursor'
  * @param {PgPool} pgPool
  * @param {string} sparkApiBaseURL
  * @param {string} dealIngestionAccessToken
+ * @param {number} batchSize
  * @param {(sparkApiBaseURL: string, dealIngestionAccessToken: string, eligibleDeals: Array) => Promise<void>} submitEligibleDealsFn
  */
-export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken, submitEligibleDealsFn) => {
-  for await (const eligibleDeals of findEligibleDeals(pgPool, 100)) {
+export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, submitEligibleDealsFn) => {
+  for await (const eligibleDeals of findEligibleDeals(pgPool, batchSize)) {
     const formattedEligibleDeals = formatEligibleDeals(eligibleDeals)
     await submitEligibleDealsFn(sparkApiBaseURL, dealIngestionAccessToken, formattedEligibleDeals)
     await markEligibleDealsSubmitted(pgPool, eligibleDeals)

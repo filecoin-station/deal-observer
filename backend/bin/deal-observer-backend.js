@@ -12,7 +12,8 @@ import { findAndSubmitEligibleDeals, submitEligibleDeals } from '../lib/deal-sub
 const {
   INFLUXDB_TOKEN,
   SPARK_API_BASE_URL,
-  DEAL_INGESTER_TOKEN
+  DEAL_INGESTER_TOKEN,
+  DEAL_INGESTER_BATCH_SIZE = 100
 } = process.env
 
 if (!INFLUXDB_TOKEN) {
@@ -67,10 +68,11 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
 }
 
 const dealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
+  const batchSize = Number(DEAL_INGESTER_BATCH_SIZE)
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, submitEligibleDeals)
+      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, submitEligibleDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)

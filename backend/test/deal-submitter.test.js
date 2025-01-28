@@ -6,6 +6,9 @@ import { findAndSubmitEligibleDeals } from '../lib/deal-submitter.js'
 
 describe('deal-submitter', () => {
   let pgPool
+  const sparkApiBaseURL = 'http://localhost:8080'
+  const dealIngestionAccessToken = 'test'
+  const batchSize = 100
 
   before(async () => {
     pgPool = await createPgPool()
@@ -33,7 +36,7 @@ describe('deal-submitter', () => {
 
       const mockSubmitEligibleDeals = mock.fn()
 
-      await findAndSubmitEligibleDeals(pgPool, 'http://localhost:8080', 'test', mockSubmitEligibleDeals)
+      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, mockSubmitEligibleDeals)
       const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
       assert.strictEqual(rows.length, 1)
       assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 1)
