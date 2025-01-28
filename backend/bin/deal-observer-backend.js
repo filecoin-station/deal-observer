@@ -12,7 +12,7 @@ const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
   console.error('INFLUXDB_TOKEN not provided. Telemetry will not be recorded.')
 }
-const LOOP_INTERVAL = 100 * 1000
+const LOOP_INTERVAL = 100_000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
