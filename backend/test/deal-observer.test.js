@@ -1,10 +1,10 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/deal-observer.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
+import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
