@@ -1,5 +1,5 @@
 const {
-  RPC_URLS = 'https://api.node.glif.io/rpc/v0,https://api.zondax.ch/fil/node/mainnet/rpc/v1',
+  RPC_URLS = 'https://api.node.glif.io/rpc/v0',
   GLIF_TOKEN
 } = process.env
 
@@ -10,6 +10,7 @@ console.log(`Selected JSON-RPC endpoint ${RPC_URL}`)
 const rpcHeaders = {}
 if (RPC_URL.includes('glif')) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
+  console.log('Using Glif auth token')
 }
 
 export {
