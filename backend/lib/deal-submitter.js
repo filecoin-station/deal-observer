@@ -5,13 +5,14 @@ import Cursor from 'pg-cursor'
  * Find deals that are eligible to be submitted to a spark api and submits them.
  *
  * @param {PgPool} pgPool
- * @param {(eligibleDeals: Array) => Promise<void>} submitEligibleDealsFn
+ * @param {string} sparkApiBaseURL
+ * @param {string} dealIngestionAccessToken
+ * @param {(sparkApiBaseURL: string, dealIngestionAccessToken: string, eligibleDeals: Array) => Promise<void>} submitEligibleDealsFn
  */
-export const findAndSubmitEligibleDeals = async (pgPool, submitEligibleDealsFn) => {
+export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken, submitEligibleDealsFn) => {
   for await (const eligibleDeals of findEligibleDeals(pgPool, 100)) {
-    console.log('Submitting eligible deals:', eligibleDeals)
     const formattedEligibleDeals = formatEligibleDeals(eligibleDeals)
-    await submitEligibleDealsFn(formattedEligibleDeals)
+    await submitEligibleDealsFn(sparkApiBaseURL, dealIngestionAccessToken, formattedEligibleDeals)
     await markEligibleDealsSubmitted(pgPool, eligibleDeals)
   }
 }
@@ -89,9 +90,10 @@ const markEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
  *
  * @param {string} sparkApiBaseURL
  * @param {string} dealIngestionAccessToken
- * @returns {(eligibleDeals: Array) => Promise<void>}
+ * @param {Array} eligibleDeals
+ * @returns {Promise<void>}
  */
-export const submitEligibleDeals = (sparkApiBaseURL, dealIngestionAccessToken) => async (eligibleDeals) => {
+export const submitEligibleDeals = async (sparkApiBaseURL, dealIngestionAccessToken, eligibleDeals) => {
   await fetch(`${sparkApiBaseURL}/eligible-deals-batch`, {
     method: 'POST',
     headers: {

@@ -31,7 +31,7 @@ describe('deal-submitter', () => {
 
       const mockSubmitEligibleDeals = mock.fn()
 
-      await findAndSubmitEligibleDeals(pgPool, mockSubmitEligibleDeals)
+      await findAndSubmitEligibleDeals(pgPool, 'http://localhost:8080', 'test', mockSubmitEligibleDeals)
       const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
       assert.strictEqual(rows.length, 1)
       assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 1)

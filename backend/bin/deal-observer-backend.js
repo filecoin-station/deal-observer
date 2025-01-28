@@ -7,6 +7,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { findAndSubmitEligibleDeals, submitEligibleDeals } from '../lib/deal-submitter.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -20,7 +21,8 @@ if (!INFLUXDB_TOKEN) {
 assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
 assert(DEAL_INGESTER_TOKEN, 'DEAL_INGESTER_TOKEN required')
 
-const LOOP_INTERVAL = 10 * 1000
+const DEAL_OBSERVER_LOOP_INTERVAL = 10 * 1000
+const DEAL_SUBMITTER_LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
@@ -29,7 +31,8 @@ const maxPastEpochs = 1999
 assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 
-const LOOP_NAME = 'Built-in actor events'
+const DEAL_OBSERVER_LOOP_NAME = 'Built-in actor events'
+const DEAL_SUBMITTER_LOOP_NAME = 'Deal submission'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const dealObserverLoop = async (makeRpcRequest, pgPool) => {
@@ -49,21 +52,45 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "${DEAL_OBSERVER_LOOP_NAME}" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', LOOP_INTERVAL)
+      recordTelemetry(`loop_${slug(DEAL_OBSERVER_LOOP_NAME, '_')}`, point => {
+        point.intField('interval_ms', DEAL_OBSERVER_LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
     }
-    if (dt < LOOP_INTERVAL) {
-      await timers.setTimeout(LOOP_INTERVAL - dt)
+    if (dt < DEAL_OBSERVER_LOOP_INTERVAL) {
+      await timers.setTimeout(DEAL_OBSERVER_LOOP_INTERVAL - dt)
     }
   }
 }
 
-await dealObserverLoop(
-  rpcRequest,
-  pgPool
-)
+const dealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
+  while (true) {
+    const start = Date.now()
+    try {
+      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, submitEligibleDeals)
+    } catch (e) {
+      console.error(e)
+      Sentry.captureException(e)
+    }
+    const dt = Date.now() - start
+    console.log(`Loop "${DEAL_SUBMITTER_LOOP_NAME}" took ${dt}ms`)
+
+    if (INFLUXDB_TOKEN) {
+      recordTelemetry(`loop_${slug(DEAL_SUBMITTER_LOOP_NAME, '_')}`, point => {
+        point.intField('interval_ms', DEAL_SUBMITTER_LOOP_INTERVAL)
+        point.intField('duration_ms', dt)
+      })
+    }
+    if (dt < DEAL_OBSERVER_LOOP_INTERVAL) {
+      await timers.setTimeout(DEAL_SUBMITTER_LOOP_INTERVAL - dt)
+    }
+  }
+}
+
+await Promise.all([
+  dealObserverLoop(rpcRequest, pgPool),
+  dealSubmitterLoop(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN)
+])
