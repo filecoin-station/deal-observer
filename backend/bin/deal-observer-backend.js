@@ -1,12 +1,10 @@
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
-import timers from 'node:timers/promises'
-import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
-import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
-import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { rpcRequest } from '../lib/rpc-service/service.js'
 import assert from 'node:assert'
+import { dealObserverLoop } from '../lib/loops.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -19,42 +17,15 @@ const finalityEpochs = 940
 const maxPastEpochs = 1999
 assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
-
-const LOOP_NAME = 'Built-in actor events'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
-
-const dealObserverLoop = async (makeRpcRequest, pgPool) => {
-  while (true) {
-    const start = Date.now()
-    try {
-      const currentChainHead = await getChainHead(makeRpcRequest)
-      const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
-      // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
-      const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.height : currentChainHead.Height - maxPastEpochs
-      for (let epoch = lastEpochStored + 1; epoch <= currentFinalizedChainHead; epoch++) {
-        await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
-      }
-    } catch (e) {
-      console.error(e)
-      Sentry.captureException(e)
-    }
-    const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
-
-    if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', LOOP_INTERVAL)
-        point.intField('duration_ms', dt)
-      })
-    }
-    if (dt < LOOP_INTERVAL) {
-      await timers.setTimeout(LOOP_INTERVAL - dt)
-    }
-  }
-}
 
 await dealObserverLoop(
   rpcRequest,
-  pgPool
+  pgPool,
+  recordTelemetry,
+  Sentry,
+  maxPastEpochs,
+  finalityEpochs,
+  LOOP_INTERVAL,
+  INFLUXDB_TOKEN
 )

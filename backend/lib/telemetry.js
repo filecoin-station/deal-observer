@@ -17,7 +17,6 @@ export const createInflux = token => {
   setInterval(() => {
     writeClient.flush().catch(console.error)
   }, 10_000).unref()
-
   return {
     influx,
 
