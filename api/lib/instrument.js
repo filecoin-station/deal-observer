@@ -26,5 +26,16 @@ Sentry.init({
   ],
   tracesSampleRate: 0.1,
   // Set sampling rate for performance profiling. This is relative to tracesSampleRate.
-  profilesSampleRate: 1.0
+  profilesSampleRate: 1.0,
+  // Ignore Fastify 4xx errors
+  // Remove once https://github.com/getsentry/sentry-javascript/pull/13198 lands
+  beforeSend (event, { originalException: err }) {
+    const isBadRequest =
+      typeof err === 'object' &&
+      err !== null &&
+      'statusCode' in err &&
+      typeof err.statusCode === 'number' &&
+      err.statusCode < 500
+    return isBadRequest ? null : event
+  }
 })
