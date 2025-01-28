@@ -14,9 +14,9 @@ import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-  const headers = { 'content-type': 'application/json' }
-  if (rpcHeaders.Authorization) {
-    Object.assign(headers, rpcHeaders)
+  const headers = { 
+    ...rpcHeaders,
+    'content-type': 'application/json'
   }
   const response = await fetch(RPC_URL, {
     method: 'POST',
