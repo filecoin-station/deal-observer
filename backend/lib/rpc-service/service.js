@@ -14,17 +14,24 @@ import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
-  const headers = { 'content-type': 'application/json' }
-  if (rpcHeaders.Authorization) {
-    Object.assign(headers, rpcHeaders)
+  const headers = {
+    ...rpcHeaders,
+    'content-type': 'application/json'
   }
-  const response = await fetch(RPC_URL, {
-    method: 'POST',
-    headers: headers,
-    body: reqBody
-  })
-
-  return Value.Parse(RpcRespone, (await response.json())).result
+  try {
+    const response = await fetch(RPC_URL, {
+      method: 'POST',
+      headers,
+      body: reqBody
+    })
+    if (!response.ok) {
+      throw new Error(`Fetch failed - HTTP ${response.status}: ${await response.text().catch(() => null)}`)
+    }
+    return Value.Parse(RpcRespone, await response.json()).result
+  } catch (error) {
+    error.message = `Failed to make RPC request ${method}: ${error.message}`
+    throw error
+  }
 }
 /**
  * @param {object} actorEventFilter
