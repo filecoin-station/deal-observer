@@ -14,6 +14,7 @@ describe('deal-observer-backend', () => {
   })
 
   after(async () => {
+    await pgPool.query('DELETE FROM active_deals')
     await pgPool.end()
   })
 
