@@ -17,8 +17,8 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
   const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
   if (activeDeals.length > 0) {
     console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
+    await storeActiveDeals(activeDeals, pgPool)
   }
-  await storeActiveDeals(activeDeals, pgPool)
 }
 
 /**
@@ -89,9 +89,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       transformedDeals.map(deal => deal.term_max),
       transformedDeals.map(deal => deal.sector_id)
     ])
-    if (activeDeals.length > 0) {
-      console.log(`Inserted ${activeDeals.length} deals in ${Date.now() - startInserting} ms`)
-    }
+    console.log(`Inserted ${activeDeals.length} deals in ${Date.now() - startInserting} ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
     // TODO: Add sentry entry for this error
