@@ -23,7 +23,7 @@ export const rpcRequest = async (method, params) => {
     if (!response.ok) {
       throw new Error(`Fetch failed - HTTP ${response.status}: ${await response.text()}`)
     }
-    return Value.Parse(RpcRespone, (await response.json())).result
+    return Value.Parse(RpcRespone, await response.json()).result
   } catch (error) {
     error.message = `Failed to make RPC request ${method}: ${error.message})`
     throw error
