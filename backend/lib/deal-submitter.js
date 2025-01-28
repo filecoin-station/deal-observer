@@ -20,7 +20,7 @@ export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIn
 /**
  * Find deals that are eligible to be submitted to a spark api.
  * Eligible deals are those that have not been submitted yet,
- * were created more than 2 days ago, and have not yet expired.
+ * were created more than 2 days ago, have payload cid, and have not yet expired.
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
@@ -29,16 +29,21 @@ export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIn
 const findEligibleDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
   const cursor = client.query(new Cursor(`
-      SELECT
-        miner_id,
-        client_id,
-        piece_cid,
-        piece_size,
-        payload_cid,
-        epoch_to_timestamp(term_start_epoch + term_min) AS expires_at 
-      FROM active_deals
-      WHERE submitted_at IS NULL AND created_at < NOW() - INTERVAL '2 days' AND epoch_to_timestamp(term_start_epoch + term_min) > NOW()
-    `))
+    SELECT
+      miner_id,
+      client_id,
+      piece_cid,
+      piece_size,
+      payload_cid,
+      epoch_to_timestamp (term_start_epoch + term_min) AS expires_at
+    FROM
+      active_deals
+    WHERE
+      submitted_at IS NULL
+      AND payload_cid IS NOT NULL
+      AND created_at < NOW() - INTERVAL '2 days'
+      AND epoch_to_timestamp (term_start_epoch + term_min) > NOW()`
+  ))
 
   let rows = await cursor.read(batchSize)
   while (rows.length > 0) {
@@ -77,11 +82,12 @@ const markEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
     UPDATE active_deals
     SET submitted_at = NOW()
-    WHERE miner_id = ANY($1) AND client_id = ANY($2) AND piece_cid = ANY($3)
+    WHERE miner_id = ANY($1) AND client_id = ANY($2) AND piece_cid = ANY($3) AND payload_cid = ANY($4)
   `, [
     eligibleDeals.map(deal => deal.miner_id),
     eligibleDeals.map(deal => deal.client_id),
-    eligibleDeals.map(deal => deal.piece_cid)
+    eligibleDeals.map(deal => deal.piece_cid),
+    eligibleDeals.map(deal => deal.payload_cid)
   ])
 }
 

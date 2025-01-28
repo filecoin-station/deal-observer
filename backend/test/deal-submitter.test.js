@@ -23,11 +23,13 @@ describe('deal-submitter', () => {
   describe('deal submitter', () => {
     it('finds and submits eligible deals to the spark api', async () => {
       // This deal is eligible
+      await givenActiveDeal(pgPool, { minerId: 0, createdAt: daysAgo(3), startsAt: today(), expiresAt: daysFromNow(10), payloadCid: 'cidone' })
+      // This deal is not eligible because it has no payload cid
       await givenActiveDeal(pgPool, { minerId: 1, createdAt: daysAgo(3), startsAt: today(), expiresAt: daysFromNow(10) })
       // This deal is not eligible because it was created less than 2 days ago
-      await givenActiveDeal(pgPool, { minerId: 2, createdAt: today(), startsAt: today(), expiresAt: daysFromNow(10) })
+      await givenActiveDeal(pgPool, { minerId: 2, createdAt: today(), startsAt: today(), expiresAt: daysFromNow(10), payloadCid: 'cidtwo' })
       // This deal is not eligible because it has expired
-      await givenActiveDeal(pgPool, { minerId: 3, createdAt: daysAgo(10), startsAt: daysAgo(10), expiresAt: daysAgo(5) })
+      await givenActiveDeal(pgPool, { minerId: 3, createdAt: daysAgo(10), startsAt: daysAgo(10), expiresAt: daysAgo(5), payloadCid: 'cidthree' })
 
       const mockSubmitEligibleDeals = mock.fn()
 
@@ -39,12 +41,12 @@ describe('deal-submitter', () => {
   })
 })
 
-const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, activatedAtEpoch = 1, minerId = 2, clientId = 3, pieceCid = 'cidone' }) => {
+const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, activatedAtEpoch = 1, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
   const { termStart, termMin, termMax } = calculateTerms(startsAt, expiresAt)
   await pgPool.query(
     `INSERT INTO active_deals 
-    (created_at, activated_at_epoch, miner_id, client_id, piece_cid, piece_size, sector_id, term_start_epoch, term_min, term_max)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-    [createdAt, activatedAtEpoch, minerId, clientId, pieceCid, 1024, 6, termStart, termMin, termMax]
+    (created_at, activated_at_epoch, miner_id, client_id, piece_cid, piece_size, sector_id, term_start_epoch, term_min, term_max, payload_cid)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    [createdAt, activatedAtEpoch, minerId, clientId, pieceCid, 1024, 6, termStart, termMin, termMax, payloadCid]
   )
 }
