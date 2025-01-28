@@ -4,10 +4,10 @@ import { dateToEpoch, unixToEpoch } from '../lib/epoch.js'
 
 describe('epoch', () => {
   it('converts a date to an epoch', () => {
-    const date = new Date('2024-12-10 07:13:30')
+    const date = new Date('2024-12-10T07:13:30Z')
     const epoch = dateToEpoch(date)
 
-    assert.strictEqual(epoch, 4516827)
+    assert.strictEqual(epoch, 4516947)
   })
 
   it('converts a unix timestamp to an epoch', () => {
