@@ -11,11 +11,22 @@ import pRetry from 'p-retry'
  */
 export const pixRequest = async (providerId, pieceCid) => {
   const url = PIECE_INDEXER_URL + '/sample/' + providerId + '/' + pieceCid
-  const response = await pRetry(async () => await fetch(url, {
-    method: 'GET',
-    headers: { 'content-type': 'application/json' }
-  }), { retries: 5 })
-  return Value.Parse(PixResponse, (await response.json())).samples[0]
+  try {
+    const response = await pRetry(async () => await fetch(url, {
+      method: 'GET',
+      headers: { 'content-type': 'application/json' }
+    }), { retries: 5 })
+    const json = await response.json()
+    try {
+      const parsedPixResponse = Value.Parse(PixResponse, json)
+      return parsedPixResponse.samples[0]
+    } catch (e) {
+      e.message = `Failed to parse response from piece indexer: ${e.message}, response: ${JSON.stringify(json)}`
+      throw e
+    }
+  } catch (e) {
+    console.error(`Failed to make RPC request: ${e.message}`)
+  }
 }
 
 /**

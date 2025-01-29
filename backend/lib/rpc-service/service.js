@@ -86,6 +86,9 @@ export async function getMinerPeerId (minerId, rpcRequestFn) {
   try {
     const params = getMinderInfoParameters(minerId)
     const res = await rpcRequestFn('Filecoin.StateMinerInfo', params)
+    if (!res || !res.PeerId) {
+      throw Error(`Failed to get peer ID for miner ${minerId}, result: `, res)
+    }
     return res.PeerId
   } catch (err) {
     console.error(`Failed to get peer ID for miner ${minerId}:`, err)
