@@ -4,7 +4,8 @@ import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observ
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
+import { storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
+import { fetchDealWithHighestActivatedEpoch } from '../lib/deal-observer.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
