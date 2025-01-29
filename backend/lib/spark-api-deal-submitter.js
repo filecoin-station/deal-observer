@@ -9,10 +9,17 @@ import Cursor from 'pg-cursor'
  * @param {(eligibleDeals: Array) => Promise<void>} submitDeals
  */
 export const findAndSubmitDeals = async (pgPool, batchSize, submitDeals) => {
+  console.debug(`Finding and submitting deals using batchSize: ${batchSize}`)
   for await (const unsubmittedDeals of findUnsubmittedDeals(pgPool, batchSize)) {
-    const formattedDeals = formatUnsubmittedDealsForSparkApi(unsubmittedDeals)
-    await submitDeals(formattedDeals)
-    await markDealsAsSubmitted(pgPool, unsubmittedDeals)
+    console.debug(`Found ${unsubmittedDeals.length} unsubmitted deals`)
+    try {
+      const formattedDeals = formatUnsubmittedDealsForSparkApi(unsubmittedDeals)
+      await submitDeals(formattedDeals)
+      console.debug(`Successfully submitted ${formattedDeals.length} deals`)
+      await markDealsAsSubmitted(pgPool, unsubmittedDeals)
+    } catch (e) {
+      console.error('Failed to submit deals:', e)
+    }
   }
 }
 
@@ -104,6 +111,7 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  * @returns {(eligibleDeals: Array) => Promise<void>}
  */
 export const submitDealsToSparkApi = (sparkApiBaseURL, dealIngestionAccessToken) => async (eligibleDeals) => {
+  console.debug(`Submitting ${eligibleDeals.length} deals to Spark API`)
   await fetch(`${sparkApiBaseURL}/eligible-deals-batch`, {
     method: 'POST',
     headers: {
