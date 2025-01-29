@@ -2,7 +2,7 @@
 import Cursor from 'pg-cursor'
 
 /**
- * Find deals that are eligible to be submitted to a spark api and submits them.
+ * Find deals that are eligible to be submitted to spark api and submits them.
  *
  * @param {PgPool} pgPool
  * @param {string} sparkApiBaseURL
