@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { after, before, beforeEach, describe, it } from 'node:test'
+import { after, before, beforeEach, it, describe } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/deal-observer.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
@@ -88,35 +88,28 @@ describe('deal-observer-backend binary', () => {
   })
   after(async () => {
     await pgPool.query('DELETE FROM active_deals')
-    await pgPool.end()
   })
-  it('then deal observer loop fetches new active deals and stores them in storage', async () => {
-    const worker = async () => {
-      await dealObserverLoop(
-        makeRpcRequest,
-        pgPool,
-        undefined,
-        undefined,
-        // The testdata has a total amount of 11 blocks
-        11,
-        0,
-        10_000,
-        undefined
-      )
-    }
-    // Timeout to kill the worker after 20 seconds
-    setTimeout(() => {
-      console.log('Condition not met, killing the worker.')
-      process.exit(1)
-    }, 20000)
-    worker()
-    while (true) {
-      const rows = (await pgPool.query('SELECT * FROM active_deals')).rows
-      console.log(`Rows: ${rows.length}`)
-      // The test data contains a total of 360 deals
-      if (rows.length === 360) {
-        process.exit(0)
-      }
-    }
+  it('then deal observer loop fetches new active deals and stores them in storage', async (t) => {
+    const controller = new AbortController()
+    const { signal } = controller
+    dealObserverLoop(
+      makeRpcRequest,
+      pgPool,
+      undefined,
+      undefined,
+      // The testdata has a total amount of 11 blocks
+      11,
+      0,
+      1,
+      undefined,
+      signal
+    )
+    // Timeout to kill the worker after 1 second
+    let rows
+    setTimeout(() => { if (!signal.aborted) { throw new Error(`Test timed out. Rows inserted ${rows.length}`) } }, 1000)
+    do {
+      rows = (await pgPool.query('SELECT * FROM active_deals')).rows
+    } while (rows.length !== 360)
+    controller.abort()
   })
 })

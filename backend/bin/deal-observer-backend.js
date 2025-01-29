@@ -18,6 +18,8 @@ const maxPastEpochs = 1999
 assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
+const controller = new AbortController()
+const { signal } = controller
 
 await dealObserverLoop(
   rpcRequest,
@@ -27,5 +29,6 @@ await dealObserverLoop(
   maxPastEpochs,
   finalityEpochs,
   LOOP_INTERVAL,
-  INFLUXDB_TOKEN
+  INFLUXDB_TOKEN,
+  signal
 )

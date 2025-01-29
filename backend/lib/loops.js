@@ -16,10 +16,10 @@ import slug from 'slug'
  * @param {string | undefined} influxToken
  * @returns {Promise<void>}
  * */
-export const dealObserverLoop = async (makeRpcRequest, pgPool, recordTelemetry, Sentry, maxPastEpochs, finalityEpochs, loopInterval, influxToken) => {
+export const dealObserverLoop = async (makeRpcRequest, pgPool, recordTelemetry, Sentry, maxPastEpochs, finalityEpochs, loopInterval, influxToken, signal) => {
   const LOOP_NAME = 'Built-in actor events'
 
-  while (true) {
+  while (!signal?.aborted) {
     const start = Date.now()
     try {
       const currentChainHead = await getChainHead(makeRpcRequest)
