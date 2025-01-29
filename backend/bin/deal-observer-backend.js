@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { findAndSubmitDeals, submitDealsToSparkApi } from '../lib/spark-api-deal-submitter.js'
+import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-deal-submitter.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -80,7 +80,7 @@ const sparkApiDealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionA
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitDeals(pgPool, batchSize, submitDeals)
+      await findAndSubmitUnsubmittedDeals(pgPool, batchSize, submitDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
