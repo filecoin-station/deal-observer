@@ -18,8 +18,8 @@ export const daysAgo = (n) => getLocalDayAsISOString(new Date(Date.now() - n * 2
 export const daysFromNow = (n) => getLocalDayAsISOString(new Date(Date.now() + n * 24 * 60 * 60 * 1000))
 
 /**
- * Calculates activated at, term start, term min, and term max epoch.
- * 
+ * Calculates activated at, term start, term min, and term max.
+ *
  * @param {string} createdAt
  * @param {string} startsAt
  * @param {string} expiresAt

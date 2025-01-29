@@ -30,20 +30,23 @@ export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIn
 const findEligibleDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
   const cursor = client.query(new Cursor(`
+    WITH two_days_ago AS (
+        SELECT (NOW() - INTERVAL '2 days')::TIMESTAMP AS ts
+    )
     SELECT
-      miner_id,
-      client_id,
-      piece_cid,
-      piece_size,
-      payload_cid,
-      epoch_to_timestamp(term_start_epoch + term_min) AS expires_at
+        miner_id,
+        client_id,
+        piece_cid,
+        piece_size,
+        payload_cid,
+        epoch_to_timestamp(term_start_epoch + term_min) AS expires_at
     FROM
-      active_deals
+        active_deals
     WHERE
-      submitted_at IS NULL
-      AND payload_cid IS NOT NULL
-      AND activated_at_epoch < timestamp_to_epoch((NOW() - INTERVAL '2 days')::TIMESTAMP)
-      AND epoch_to_timestamp(term_start_epoch + term_min) > NOW()`
+        submitted_at IS NULL
+        AND payload_cid IS NOT NULL
+        AND activated_at_epoch < timestamp_to_epoch((SELECT ts FROM two_days_ago))
+        AND epoch_to_timestamp(term_start_epoch + term_min) > NOW()`
   ))
 
   let rows = await cursor.read(batchSize)
