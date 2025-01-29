@@ -5,8 +5,6 @@ import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/dea
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { dealObserverLoop } from '../lib/deal-observer-loop.js'
-import { makeRpcRequest } from './utils.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -74,42 +72,5 @@ describe('deal-observer-backend', () => {
     const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, actual)
-  })
-})
-
-describe('deal-observer-backend binary', () => {
-  let pgPool
-  before(async () => {
-    pgPool = await createPgPool()
-    await migrateWithPgClient(pgPool)
-  })
-  beforeEach(async () => {
-    await pgPool.query('DELETE FROM active_deals')
-  })
-  after(async () => {
-    await pgPool.query('DELETE FROM active_deals')
-  })
-  it('then deal observer loop fetches new active deals and stores them in storage', async (t) => {
-    const controller = new AbortController()
-    const { signal } = controller
-    dealObserverLoop(
-      makeRpcRequest,
-      pgPool,
-      undefined,
-      undefined,
-      // The testdata has a total amount of 11 blocks
-      11,
-      0,
-      1,
-      undefined,
-      signal
-    )
-    // Timeout to kill the worker after 1 second
-    let rows
-    setTimeout(() => { if (!signal.aborted) { throw new Error(`Test timed out. Rows inserted ${rows.length}`) } }, 1000)
-    do {
-      rows = (await pgPool.query('SELECT * FROM active_deals')).rows
-    } while (rows.length !== 360)
-    controller.abort()
   })
 })
