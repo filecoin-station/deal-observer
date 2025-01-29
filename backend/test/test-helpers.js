@@ -18,14 +18,17 @@ export const daysAgo = (n) => getLocalDayAsISOString(new Date(Date.now() - n * 2
 export const daysFromNow = (n) => getLocalDayAsISOString(new Date(Date.now() + n * 24 * 60 * 60 * 1000))
 
 /**
- * Calculate term start, term min, and term max from startsAt and expiresAt
+ * Calculates activated at, term start, term min, and term max epoch.
+ * 
+ * @param {string} createdAt
  * @param {string} startsAt
  * @param {string} expiresAt
  */
-export const calculateTerms = (startsAt, expiresAt) => {
+export const calculateActiveDealEpochs = (createdAt, startsAt, expiresAt) => {
+  const activatedAtEpoch = dateToEpoch(new Date(createdAt))
   const termStart = dateToEpoch(new Date(startsAt))
   const termEndEpoch = dateToEpoch(new Date(expiresAt))
   const termEnd = termEndEpoch - termStart
 
-  return { termStart, termMin: termEnd, termMax: termEnd }
+  return { activatedAtEpoch, termStart, termMin: termEnd, termMax: termEnd }
 }

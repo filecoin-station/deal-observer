@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { calculateTerms, daysAgo, daysFromNow, today } from './test-helpers.js'
+import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
 import { findAndSubmitEligibleDeals } from '../lib/deal-submitter.js'
 
 describe('deal-submitter', () => {
@@ -44,12 +44,12 @@ describe('deal-submitter', () => {
   })
 })
 
-const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, activatedAtEpoch = 1, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
-  const { termStart, termMin, termMax } = calculateTerms(startsAt, expiresAt)
+const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
+  const { activatedAtEpoch, termStart, termMin, termMax } = calculateActiveDealEpochs(createdAt, startsAt, expiresAt)
   await pgPool.query(
     `INSERT INTO active_deals 
-    (created_at, activated_at_epoch, miner_id, client_id, piece_cid, piece_size, sector_id, term_start_epoch, term_min, term_max, payload_cid)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-    [createdAt, activatedAtEpoch, minerId, clientId, pieceCid, 1024, 6, termStart, termMin, termMax, payloadCid]
+    (activated_at_epoch, miner_id, client_id, piece_cid, piece_size, sector_id, term_start_epoch, term_min, term_max, payload_cid)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+    [activatedAtEpoch, minerId, clientId, pieceCid, 1024, 6, termStart, termMin, termMax, payloadCid]
   )
 }

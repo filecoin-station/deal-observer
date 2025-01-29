@@ -36,14 +36,14 @@ const findEligibleDeals = async function * (pgPool, batchSize) {
       piece_cid,
       piece_size,
       payload_cid,
-      epoch_to_timestamp (term_start_epoch + term_min) AS expires_at
+      epoch_to_timestamp(term_start_epoch + term_min) AS expires_at
     FROM
       active_deals
     WHERE
       submitted_at IS NULL
       AND payload_cid IS NOT NULL
-      AND created_at < NOW() - INTERVAL '2 days'
-      AND epoch_to_timestamp (term_start_epoch + term_min) > NOW()`
+      AND activated_at_epoch < timestamp_to_epoch((NOW() - INTERVAL '2 days')::TIMESTAMP)
+      AND epoch_to_timestamp(term_start_epoch + term_min) > NOW()`
   ))
 
   let rows = await cursor.read(batchSize)
@@ -83,12 +83,12 @@ const markEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
     UPDATE active_deals
     SET submitted_at = NOW()
-    WHERE miner_id = ANY($1) AND client_id = ANY($2) AND piece_cid = ANY($3) AND payload_cid = ANY($4)
+    WHERE miner_id = ANY($1) AND client_id = ANY($2) AND piece_cid = ANY($3) AND piece_size = ANY($4)
   `, [
     eligibleDeals.map(deal => deal.miner_id),
     eligibleDeals.map(deal => deal.client_id),
     eligibleDeals.map(deal => deal.piece_cid),
-    eligibleDeals.map(deal => deal.payload_cid)
+    eligibleDeals.map(deal => deal.piece_size)
   ])
 }
 
