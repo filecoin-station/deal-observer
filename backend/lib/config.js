@@ -8,8 +8,9 @@ const RPC_URL = rpcUrls[Math.floor(Math.random() * rpcUrls.length)]
 console.log(`Selected JSON-RPC endpoint ${RPC_URL}`)
 
 const rpcHeaders = {}
-if (RPC_URL.includes('glif')) {
+if (RPC_URL.includes('glif') && GLIF_TOKEN) {
   rpcHeaders.Authorization = `Bearer ${GLIF_TOKEN}`
+  console.info('Using Glif auth token')
 }
 
 export {

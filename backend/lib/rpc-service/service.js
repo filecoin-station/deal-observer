@@ -1,4 +1,4 @@
-import { RPC_URL } from '../config.js'
+import { RPC_URL, rpcHeaders } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
@@ -14,10 +14,14 @@ import pRetry from 'p-retry'
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
+  const headers = {
+    ...rpcHeaders,
+    'content-type': 'application/json'
+  }
   try {
     const response = await pRetry(async () => await fetch(RPC_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: reqBody
     }), { retries: 5 })
     if (!response.ok) {
