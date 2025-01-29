@@ -5,9 +5,20 @@ import { parse } from '@ipld/dag-json'
 import { getActorEvents, getActorEventsFilter, getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { ClaimEvent } from '../lib/rpc-service/data-types.js'
 import { Value } from '@sinclair/typebox/value'
-import { makeRpcRequest } from './utils.js'
+import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 
 describe('RpcApiClient', () => {
+  const makeRpcRequest = async (method, params) => {
+    switch (method) {
+      case 'Filecoin.ChainHead':
+        return parse(JSON.stringify(chainHeadTestData))
+      case 'Filecoin.GetActorEventsRaw':
+        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+      default:
+        console.error('Unknown method')
+    }
+  }
+
   it('retrieves the chainHead', async () => {
     const chainHead = await getChainHead(makeRpcRequest)
     assert(chainHead)

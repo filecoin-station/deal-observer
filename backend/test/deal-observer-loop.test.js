@@ -1,10 +1,22 @@
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { dealObserverLoop } from '../lib/deal-observer-loop.js'
-import { makeRpcRequest } from './utils.js'
 import { before, beforeEach, it, describe, after } from 'node:test'
+import { rawActorEventTestData } from './test_data/rawActorEvent.js'
+import { chainHeadTestData } from './test_data/chainHead.js'
+import { parse } from '@ipld/dag-json'
 
 describe('dealObserverLoop', () => {
   let pgPool
+  const makeRpcRequest = async (method, params) => {
+    switch (method) {
+      case 'Filecoin.ChainHead':
+        return parse(JSON.stringify(chainHeadTestData))
+      case 'Filecoin.GetActorEventsRaw':
+        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+      default:
+        console.error('Unknown method')
+    }
+  }
   before(async () => {
     pgPool = await createPgPool()
     await migrateWithPgClient(pgPool)
