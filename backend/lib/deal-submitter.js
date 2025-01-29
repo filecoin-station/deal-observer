@@ -20,8 +20,11 @@ export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIn
 
 /**
  * Find deals that are eligible to be submitted to spark api.
- * Eligible deals are those that have not been submitted yet,
- * were created more than 2 days ago, have payload cid, and have not yet expired.
+ * Eligible deals are those that
+ * - have not been submitted yet
+ * - were created more than 2 days ago
+ * - have payload cid
+ * - have not yet expired
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
