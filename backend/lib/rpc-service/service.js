@@ -4,7 +4,7 @@ import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
-
+import pRetry from 'p-retry'
 /** @import { Static } from '@sinclair/typebox' */
 
 /**
@@ -15,11 +15,11 @@ import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
   try {
-    const response = await fetch(RPC_URL, {
+    const response = await pRetry(async () => await fetch(RPC_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: reqBody
-    })
+    }), { retries: 5 })
     if (!response.ok) {
       throw new Error(`Fetch failed - HTTP ${response.status}: ${await response.text().catch(() => null)}`)
     }
