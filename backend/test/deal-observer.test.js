@@ -5,7 +5,7 @@ import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/dea
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { dealObserverLoop } from '../lib/loops.js'
+import { dealObserverLoop } from '../lib/deal-observer-loop.js'
 import { makeRpcRequest } from './utils.js'
 
 describe('deal-observer-backend', () => {

@@ -4,7 +4,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { rpcRequest } from '../lib/rpc-service/service.js'
 import assert from 'node:assert'
-import { dealObserverLoop } from '../lib/loops.js'
+import { dealObserverLoop } from '../lib/deal-observer-loop.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
