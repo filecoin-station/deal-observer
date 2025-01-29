@@ -1,10 +1,13 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
-import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
+import {
+  createPgPool,
+  storeActiveDeals,
+  migrateWithPgClient
+} from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch } from '../lib/deal-observer.js'
 
 describe('deal-observer-backend', () => {
@@ -37,7 +40,7 @@ describe('deal-observer-backend', () => {
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
-    await storeActiveDeals([event], pgPool)
+    await storeActiveDeals(pgPool, [event])
     const result = await pgPool.query('SELECT * FROM active_deals')
     const expectedData = {
       activated_at_epoch: event.height,
@@ -69,7 +72,7 @@ describe('deal-observer-backend', () => {
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
 
-    await storeActiveDeals([event], pgPool)
+    await storeActiveDeals(pgPool, [event])
     const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, actual)

@@ -1,7 +1,7 @@
 /** @import { BlockEvent } from '../../backend/lib/rpc-service/data-types.js' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { ActiveDealDbEntry } from './types.js'
 import { Value } from '@sinclair/typebox/value'
 
 /**
@@ -9,7 +9,10 @@ import { Value } from '@sinclair/typebox/value'
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
-export async function storeActiveDeals (activeDeals, pgPool) {
+async function storeActiveDeals (pgPool, activeDeals) {
+  if (activeDeals.length === 0) {
+    return
+  }
   const transformedDeals = activeDeals.map((deal) => (
     {
       activated_at_epoch: deal.height,
@@ -75,10 +78,12 @@ export async function storeActiveDeals (activeDeals, pgPool) {
  * @param {string} query
  * @returns {Promise<Array<Static<typeof ActiveDealDbEntry>>>}
  */
-export async function loadDeals (pgPool, query) {
+async function loadDeals (pgPool, query) {
   const result = (await pgPool.query(query)).rows.map(deal => {
     return Value.Parse(ActiveDealDbEntry, deal)
   }
   )
   return result
 }
+
+export { storeActiveDeals, loadDeals }
