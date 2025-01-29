@@ -15,5 +15,5 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
   const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
   assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
   console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
-  await storeActiveDeals(activeDeals, pgPool)
+  await storeActiveDeals(pgPool, activeDeals)
 }
