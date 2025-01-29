@@ -7,6 +7,7 @@ import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'node:assert'
+import { pieceIndexerLoopFunction } from '../lib/piece-indexer.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -19,11 +20,11 @@ const finalityEpochs = 940
 const maxPastEpochs = 1999
 assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
-
-const LOOP_NAME = 'Built-in actor events'
+const queryLimit = 1000
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const dealObserverLoop = async (makeRpcRequest, pgPool) => {
+  const LOOP_NAME = 'Built-in actor events'
   while (true) {
     const start = Date.now()
     try {
@@ -42,6 +43,32 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
     const dt = Date.now() - start
     console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
+    if (INFLUXDB_TOKEN) {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+        point.intField('interval_ms', LOOP_INTERVAL)
+        point.intField('duration_ms', dt)
+      })
+    }
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
+    }
+  }
+}
+
+export const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool) => {
+  const LOOP_NAME = 'Piece Indexer'
+  while (true) {
+    const start = Date.now()
+    try {
+      pieceIndexerLoopFunction(rpcRequest, pixRequest, pgPool, queryLimit)
+    } catch (e) {
+      console.error(e)
+      Sentry.captureException(e)
+    }
+    const dt = Date.now() - start
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+
+    // For local monitoring and debugging, we can omit sending data to InfluxDB
     if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
