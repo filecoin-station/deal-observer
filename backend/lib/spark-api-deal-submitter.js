@@ -2,25 +2,23 @@
 import Cursor from 'pg-cursor'
 
 /**
- * Find deals that are eligible to be submitted to spark api and submits them.
+ * Finds deals that haven't been submitted to the Spark API yet and submits them.
  *
  * @param {PgPool} pgPool
- * @param {string} sparkApiBaseURL
- * @param {string} dealIngestionAccessToken
  * @param {number} batchSize
- * @param {(sparkApiBaseURL: string, dealIngestionAccessToken: string, eligibleDeals: Array) => Promise<void>} submitEligibleDealsFn
+ * @param {(eligibleDeals: Array) => Promise<void>} submitDeals
  */
-export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, submitEligibleDealsFn) => {
-  for await (const eligibleDeals of findEligibleDeals(pgPool, batchSize)) {
-    const formattedEligibleDeals = formatEligibleDeals(eligibleDeals)
-    await submitEligibleDealsFn(sparkApiBaseURL, dealIngestionAccessToken, formattedEligibleDeals)
-    await markEligibleDealsSubmitted(pgPool, eligibleDeals)
+export const findAndSubmitDeals = async (pgPool, batchSize, submitDeals) => {
+  for await (const unsubmittedDeals of findUnsubmittedDeals(pgPool, batchSize)) {
+    const formattedDeals = formatUnsubmittedDealsForSparkApi(unsubmittedDeals)
+    await submitDeals(formattedDeals)
+    await markDealsAsSubmitted(pgPool, unsubmittedDeals)
   }
 }
 
 /**
- * Find deals that are eligible to be submitted to spark api.
- * Eligible deals are those that
+ * Finds deals that haven't been submitted to spark api.
+ * Eligible deals for submission are those that
  * - have not been submitted yet
  * - were created more than 2 days ago
  * - have payload cid
@@ -30,7 +28,7 @@ export const findAndSubmitEligibleDeals = async (pgPool, sparkApiBaseURL, dealIn
  * @param {number} batchSize
  * @returns {AsyncGenerator<Array>}
  */
-const findEligibleDeals = async function * (pgPool, batchSize) {
+const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
   const cursor = client.query(new Cursor(`
     WITH two_days_ago AS (
@@ -63,12 +61,12 @@ const findEligibleDeals = async function * (pgPool, batchSize) {
 }
 
 /**
- * Format eligible deals to format expected by spark api.
+ * Format unsubmitted deals to format expected by spark api.
  *
  * @param {Array} deals
  * @returns {Array}
 */
-const formatEligibleDeals = (deals) => {
+const formatUnsubmittedDealsForSparkApi = (deals) => {
   return deals.map(deal => ({
     minerId: deal.miner_id,
     clientId: deal.client_id,
@@ -80,12 +78,12 @@ const formatEligibleDeals = (deals) => {
 }
 
 /**
- * Mark eligible deals as submitted.
+ * Mark deals as submitted.
  *
  * @param {Queryable} pgPool
  * @param {Array} eligibleDeals
  */
-const markEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
+const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
     UPDATE active_deals
     SET submitted_at = NOW()
@@ -99,14 +97,13 @@ const markEligibleDealsSubmitted = async (pgPool, eligibleDeals) => {
 }
 
 /**
- * Submits eligible deals to a spark api.
+ * Submits deals to a spark api.
  *
  * @param {string} sparkApiBaseURL
  * @param {string} dealIngestionAccessToken
- * @param {Array} eligibleDeals
- * @returns {Promise<void>}
+ * @returns {(eligibleDeals: Array) => Promise<void>}
  */
-export const submitEligibleDeals = async (sparkApiBaseURL, dealIngestionAccessToken, eligibleDeals) => {
+export const submitDealsToSparkApi = (sparkApiBaseURL, dealIngestionAccessToken) => async (eligibleDeals) => {
   await fetch(`${sparkApiBaseURL}/eligible-deals-batch`, {
     method: 'POST',
     headers: {

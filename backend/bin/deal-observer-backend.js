@@ -1,3 +1,4 @@
+/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
 import assert from 'node:assert'
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
@@ -7,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { findAndSubmitEligibleDeals, submitEligibleDeals } from '../lib/deal-submitter.js'
+import { findAndSubmitDeals, submitDealsToSparkApi } from '../lib/spark-api-deal-submitter.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -67,12 +68,19 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-const dealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
+/**
+ *
+ * @param {PgPool} pgPool
+ * @param {string} sparkApiBaseURL
+ * @param {string} dealIngestionAccessToken
+ */
+const sparkApiDealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
   const batchSize = Number(DEAL_INGESTER_BATCH_SIZE)
+  const submitDeals = submitDealsToSparkApi(sparkApiBaseURL, dealIngestionAccessToken)
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, submitEligibleDeals)
+      await findAndSubmitDeals(pgPool, batchSize, submitDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -94,5 +102,5 @@ const dealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessTok
 
 await Promise.all([
   dealObserverLoop(rpcRequest, pgPool),
-  dealSubmitterLoop(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN)
+  sparkApiDealSubmitterLoop(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN)
 ])

@@ -2,9 +2,9 @@ import assert from 'node:assert'
 import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
-import { findAndSubmitEligibleDeals } from '../lib/deal-submitter.js'
+import { findAndSubmitDeals } from '../lib/spark-api-deal-submitter.js'
 
-describe('deal-submitter', () => {
+describe('spark-api-deal-submitter', () => {
   let pgPool
   const sparkApiBaseURL = 'http://localhost:8080'
   const dealIngestionAccessToken = 'test'
@@ -23,7 +23,7 @@ describe('deal-submitter', () => {
     await pgPool.query('DELETE FROM active_deals')
   })
 
-  describe('deal submitter', () => {
+  describe('spark api deal submitter', () => {
     it('finds and submits eligible deals to the spark api', async () => {
       // This deal is eligible
       await givenActiveDeal(pgPool, { minerId: 0, createdAt: daysAgo(3), startsAt: today(), expiresAt: daysFromNow(10), payloadCid: 'cidone' })
@@ -34,12 +34,13 @@ describe('deal-submitter', () => {
       // This deal is not eligible because it has expired
       await givenActiveDeal(pgPool, { minerId: 3, createdAt: daysAgo(10), startsAt: daysAgo(10), expiresAt: daysAgo(5), payloadCid: 'cidthree' })
 
-      const mockSubmitEligibleDeals = mock.fn()
+      const mockSubmitEligibleDeals = (_url, _token) => mock.fn()
+      const mockSubmit = mockSubmitEligibleDeals(sparkApiBaseURL, dealIngestionAccessToken)
 
-      await findAndSubmitEligibleDeals(pgPool, sparkApiBaseURL, dealIngestionAccessToken, batchSize, mockSubmitEligibleDeals)
+      await findAndSubmitDeals(pgPool, batchSize, mockSubmit)
       const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
       assert.strictEqual(rows.length, 1)
-      assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 1)
+      assert.strictEqual(mockSubmit.mock.calls.length, 1)
     })
   })
 })
