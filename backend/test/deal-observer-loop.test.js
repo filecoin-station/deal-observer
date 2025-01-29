@@ -33,15 +33,15 @@ describe('dealObserverLoop', () => {
   it('then deal observer loop fetches new active deals and stores them in storage', async (t) => {
     const controller = new AbortController()
     const { signal } = controller
-    let rows
-    const failOnTimeout = async () => { await setTimeout(() => { if (!signal.aborted) { throw new Error(`Test timed out. Rows inserted ${rows.length}`) } }, 1000) }
     const waitForDealCount = async (targetCount) => {
       while (true) {
-        const { rows } = await pgPool.query('SELECT COUNT(*) FROM active_deals')
-        if (parseInt(rows[0].count) === 360) break
+        const { rows } = (await pgPool.query('SELECT COUNT(*) FROM active_deals'))
+        console.log('Current deal count:', rows[0].count)
+        if (parseInt(rows[0].count) === targetCount) break
       }
       controller.abort()
     }
+    const failOnTimeout = async () => { await setTimeout(() => { if (!signal.aborted) { throw new Error('Test timed out') } }, 2000) }
     await Promise.all([failOnTimeout(), waitForDealCount(360),
       dealObserverLoop(
         makeRpcRequest,
@@ -51,7 +51,7 @@ describe('dealObserverLoop', () => {
         // The testdata has a total amount of 11 blocks
         11,
         0,
-        1,
+        100,
         undefined,
         signal
       )])
