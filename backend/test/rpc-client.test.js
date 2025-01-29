@@ -15,7 +15,7 @@ describe('RpcApiClient', () => {
       case 'Filecoin.GetActorEventsRaw':
         return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
       default:
-        console.error('Unknown method')
+        throw new Error(`Unsupported RPC API method: "${method}"`)
     }
   }
 
