@@ -8,7 +8,7 @@ import { Value } from '@sinclair/typebox/value'
  * @param {Static <typeof BlockEvent>} blockEvent
  * @returns { Static < typeof ActiveDealDbEntry> }
  */
-export function convertBlockEventTyActiveDealDbEntry (blockEvent) {
+export function convertBlockEventToActiveDealDbEntry (blockEvent) {
   return Value.Parse(ActiveDealDbEntry, {
     activated_at_epoch: blockEvent.height,
     miner_id: blockEvent.event.provider,
