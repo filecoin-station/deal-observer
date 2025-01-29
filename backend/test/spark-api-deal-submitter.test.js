@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
-import { findAndSubmitDeals } from '../lib/spark-api-deal-submitter.js'
+import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-deal-submitter.js'
 
 describe('spark-api-deal-submitter', () => {
   let pgPool
@@ -37,7 +37,7 @@ describe('spark-api-deal-submitter', () => {
       const mockSubmitEligibleDeals = (_url, _token) => mock.fn()
       const mockSubmit = mockSubmitEligibleDeals(sparkApiBaseURL, dealIngestionAccessToken)
 
-      await findAndSubmitDeals(pgPool, batchSize, mockSubmit)
+      await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmit)
       const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
       assert.strictEqual(rows.length, 1)
       assert.strictEqual(mockSubmit.mock.calls.length, 1)

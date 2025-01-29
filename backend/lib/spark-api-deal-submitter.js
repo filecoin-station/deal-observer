@@ -8,7 +8,7 @@ import Cursor from 'pg-cursor'
  * @param {number} batchSize
  * @param {(eligibleDeals: Array) => Promise<void>} submitDeals
  */
-export const findAndSubmitDeals = async (pgPool, batchSize, submitDeals) => {
+export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
   console.debug(`Finding and submitting deals using batchSize: ${batchSize}`)
   for await (const unsubmittedDeals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${unsubmittedDeals.length} unsubmitted deals`)
@@ -25,7 +25,7 @@ export const findAndSubmitDeals = async (pgPool, batchSize, submitDeals) => {
 
 /**
  * Finds deals that haven't been submitted to spark api.
- * Eligible deals for submission are those that
+ * For deals to be submitted they must
  * - have not been submitted yet
  * - were created more than 2 days ago
  * - have payload cid
@@ -110,14 +110,14 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  * @param {string} dealIngestionAccessToken
  * @returns {(eligibleDeals: Array) => Promise<void>}
  */
-export const submitDealsToSparkApi = (sparkApiBaseURL, dealIngestionAccessToken) => async (eligibleDeals) => {
-  console.debug(`Submitting ${eligibleDeals.length} deals to Spark API`)
+export const submitDealsToSparkApi = (sparkApiBaseURL, dealIngestionAccessToken) => async (unsubmittedDeals) => {
+  console.debug(`Submitting ${unsubmittedDeals.length} deals to Spark API`)
   await fetch(`${sparkApiBaseURL}/eligible-deals-batch`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${dealIngestionAccessToken}`
     },
-    body: JSON.stringify(eligibleDeals)
+    body: JSON.stringify(unsubmittedDeals)
   })
 }
