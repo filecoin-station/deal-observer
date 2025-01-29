@@ -23,6 +23,14 @@ export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, pi
   }
 }
 
+/**
+ *
+ * @param {function} rpcRequest
+ * @param {function} pixRequest
+ * @param {Queryable} pgPool
+ * @param {number} queryLimit
+ * @returns {Promise<void>}
+ */
 export const pieceIndexerLoopFunction = async (rpcRequest, pixRequest, pgPool, queryLimit) => {
   // TODO: handle payloads which cannot be retrieved from the piece CID indexer
   const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, queryLimit)

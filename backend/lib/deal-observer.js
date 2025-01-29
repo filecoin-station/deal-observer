@@ -38,7 +38,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
   if (activeDeals.length === 0) {
     return
   }
-  const startInserting = Date.now()
   try {
     // Insert deals in a batch
     const insertQuery = `
@@ -90,11 +89,6 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.sector_id),
       activeDeals.map(deal => deal.payload_cid)
     ])
-
-    // Commit the transaction if all inserts are successful
-    if (activeDeals.length > 0) {
-      console.log(`Inserted ${activeDeals.length} deals in ${Date.now() - startInserting} ms`)
-    }
   } catch (error) {
     // If any error occurs, roll back the transaction
     // TODO: Add sentry entry for this error
