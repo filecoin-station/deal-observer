@@ -1,7 +1,7 @@
 /** @import { BlockEvent } from '../../backend/lib/rpc-service/data-types.js' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { ActiveDealDbEntry } from './types.js'
 import { Value } from '@sinclair/typebox/value'
 
 /**
