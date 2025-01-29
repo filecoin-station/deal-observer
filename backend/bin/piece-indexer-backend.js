@@ -13,7 +13,7 @@ if (!INFLUXDB_TOKEN) {
   console.error('INFLUXDB_TOKEN was not provided. Please set the INFLUXDB_TOKEN environment variable.')
 }
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
-const LOOP_INTERVAL = 10 * 1000
+const LOOP_INTERVAL = 100_000
 const queryLimit = 1000
 const LOOP_NAME = 'Piece Indexer'
 

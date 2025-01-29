@@ -18,9 +18,7 @@ export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, pi
     deal.payload_cid = payloadCid
     updatedDeals.push(deal)
   }
-  if (updatedDeals.length > 0) {
-    await storeActiveDeals(updatedDeals, pgPool)
-  }
+  await storeActiveDeals(updatedDeals, pgPool)
 }
 
 /**
