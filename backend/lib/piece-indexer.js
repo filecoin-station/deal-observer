@@ -1,12 +1,13 @@
 import { fetchPayloadCid } from './pix-service/service.js'
 import { parseDeals, storeActiveDeals } from './deal-observer.js'
+import assert from 'node:assert'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
 
 /**
- * @param {import("@filecoin-station/deal-observer-db").Queryable} pgPool
+ * @param {Queryable} pgPool
  * @param {function} makeRpcRequest
  * @param {function} pixRequest
  * @returns {Promise<void>}
@@ -43,6 +44,7 @@ export const indexPieces = async (rpcRequest, pixRequest, pgPool, queryLimit) =>
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
 export async function fetchDealsWithNoPayloadCid (pgPool, limit) {
+  assert(typeof limit === 'number', 'limit must be a number')
   const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${limit}`
   return await parseDeals(pgPool, query)
 }

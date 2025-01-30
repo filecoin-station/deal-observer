@@ -9,7 +9,7 @@ import pRetry from 'p-retry'
  * @param {string} pieceCid
  * @returns {Promise<string>}
  */
-export const pixRequest = async (providerId, pieceCid) => {
+export const getDealPayloadCid = async (providerId, pieceCid) => {
   const url = PIECE_INDEXER_URL + '/sample/' + providerId + '/' + pieceCid
   try {
     const response = await pRetry(async () => await fetch(url, {
@@ -19,6 +19,9 @@ export const pixRequest = async (providerId, pieceCid) => {
     const json = await response.json()
     try {
       const parsedPixResponse = Value.Parse(PixResponse, json)
+      if (parsedPixResponse.samples.length === 0) {
+        throw new Error('No samples found in the response.')
+      }
       return parsedPixResponse.samples[0]
     } catch (e) {
       throw new Error(`Failed to parse response from piece indexer. The response was : ${JSON.stringify(json)}`, { cause: e })
