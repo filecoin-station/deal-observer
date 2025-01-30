@@ -27,7 +27,14 @@ export const rpcRequest = async (method, params) => {
     if (!response.ok) {
       throw new Error(`Fetch failed - HTTP ${response.status}: ${await response.text().catch(() => null)}`)
     }
-    return Value.Parse(RpcRespone, await response.json()).result
+    const json = await response.json()
+    try {
+      const parsedRpcResponse = Value.Parse(RpcRespone, json).result
+      return parsedRpcResponse
+    } catch (error) {
+      error.message = `Failed to parse RPC response: ${error.message}. Json Response: ${JSON.stringify(json)}`
+      throw error
+    }
   } catch (error) {
     error.message = `Failed to make RPC request ${method}: ${error.message}`
     throw error
