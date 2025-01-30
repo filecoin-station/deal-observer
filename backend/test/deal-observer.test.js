@@ -5,10 +5,10 @@ import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import {
   createPgPool,
-  fetchDealWithHighestActivatedEpoch,
   storeActiveDeals,
   migrateWithPgClient
 } from '@filecoin-station/deal-observer-db'
+import { fetchDealWithHighestActivatedEpoch } from '../lib/deal-observer.js'
 
 describe('deal-observer-backend', () => {
   let pgPool

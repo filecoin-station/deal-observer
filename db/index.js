@@ -2,7 +2,7 @@ import pg from 'pg'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import Postgrator from 'postgrator'
-import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from './lib/database-access.js'
+import { loadDeals, storeActiveDeals } from './lib/database-access.js'
 
 // re-export types
 /** @typedef {import('./typings.js').Queryable} Queryable */
@@ -77,5 +77,5 @@ export const migrateWithPgClient = async (client) => {
 export {
   DATABASE_URL,
   storeActiveDeals,
-  fetchDealWithHighestActivatedEpoch
+  loadDeals
 }

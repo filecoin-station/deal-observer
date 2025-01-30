@@ -1,8 +1,10 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import { Static } from '@sinclair/typebox' */
+/** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
 
 import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
-import { storeActiveDeals } from '@filecoin-station/deal-observer-db/lib/database-access.js'
+import { loadDeals, storeActiveDeals } from '@filecoin-station/deal-observer-db'
 
 /**
  * @param {number} blockHeight
@@ -16,4 +18,14 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
   assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
   console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
   await storeActiveDeals(pgPool, activeDeals)
+}
+
+/**
+ * @param {Queryable} pgPool
+ * @returns {Promise<Static< typeof ActiveDealDbEntry> | null>}
+ */
+export async function fetchDealWithHighestActivatedEpoch (pgPool) {
+  const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
+  const result = await loadDeals(pgPool, query)
+  return result.length > 0 ? result[0] : null
 }
