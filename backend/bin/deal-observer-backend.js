@@ -7,7 +7,7 @@ import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'node:assert'
-import { pieceIndexerLoopFunction } from '../lib/piece-indexer.js'
+import { indexPieces } from '../lib/piece-indexer.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -60,7 +60,7 @@ export const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
-      pieceIndexerLoopFunction(rpcRequest, pixRequest, pgPool, queryLimit)
+      indexPieces(rpcRequest, pixRequest, pgPool, queryLimit)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)

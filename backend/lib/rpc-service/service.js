@@ -48,7 +48,7 @@ export const rpcRequest = async (method, params) => {
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
   const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
   if (!rawEvents || rawEvents.length === 0) {
-    console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
+    console.debug(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
   }
   // TODO: handle reverted events
@@ -73,8 +73,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
         continue
       }
       default: {
-        console.error(`Unknown event type: ${eventType}`)
-        break
+        throw Error(`Unknown event type: ${eventType}`)
       }
     }
   }
@@ -103,7 +102,7 @@ export async function getMinerPeerId (minerId, rpcRequestFn) {
     }
     return res.PeerId
   } catch (err) {
-    console.error(`Failed to get peer ID for miner ${minerId}:`, err)
+    throw Error(`Failed to get peer ID for miner ${minerId}.`, { cause: err })
   }
 }
 

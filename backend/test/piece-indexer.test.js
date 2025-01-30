@@ -7,7 +7,7 @@ import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { pieceIndexerLoopFunction } from '../lib/piece-indexer.js'
+import { indexPieces } from '../lib/piece-indexer.js'
 
 describe('deal-observer-backend piece indexer', () => {
   const makeRpcRequest = async (method, params) => {
@@ -50,7 +50,7 @@ describe('deal-observer-backend piece indexer', () => {
 
   it('piece indexer loop function fetches deals where there exists not payload yet and updates the database entry', async (t) => {
     assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length, 360)
-    await pieceIndexerLoopFunction(makeRpcRequest, makepixRequest, pgPool, 10000)
+    await indexPieces(makeRpcRequest, makepixRequest, pgPool, 10000)
     assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length, 0)
   })
 })

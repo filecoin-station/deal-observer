@@ -21,11 +21,10 @@ export const pixRequest = async (providerId, pieceCid) => {
       const parsedPixResponse = Value.Parse(PixResponse, json)
       return parsedPixResponse.samples[0]
     } catch (e) {
-      e.message = `Failed to parse response from piece indexer: ${e.message}, response: ${JSON.stringify(json)}`
-      throw e
+      throw new Error(`Failed to parse response from piece indexer. The response was : ${JSON.stringify(json)}`, { cause: e })
     }
   } catch (e) {
-    console.error(`Failed to make RPC request: ${e.message}`)
+    throw new Error('Failed to make RPC request.', { cause: e })
   }
 }
 

@@ -1,5 +1,6 @@
 import { base64pad } from 'multiformats/bases/base64'
 import { decode as cborDecode } from '@ipld/dag-cbor'
+import * as util from 'node:util'
 
 const decodeCborInBase64 = (data) => {
   return cborDecode(base64pad.baseDecode(data))
@@ -30,19 +31,18 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     if (value[Symbol.toStringTag] === 'CID') {
       value = value.toString()
     } else if (typeof value !== 'number') {
-      console.error(
-        'Unsupported type %s found in the raw event entries. Key: %s Value: %o',
+      throw new Error(util.format(
+        'Unsupported type %s found in the raw event entries. Key: %s Value: ',
         typeof value,
         key,
-        value
+        value)
       )
-      continue
     }
 
     event[key] = value
   }
   if (!eventType) {
-    console.error(`No event type found in the raw event entries. Event entries: ${JSON.stringify(event)}`)
+    throw new Error(util.format('No event type found in the raw event entries. Event entries: %o', event))
   }
   return { event, eventType }
 }
