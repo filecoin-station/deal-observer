@@ -72,16 +72,17 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
  * Periodically fetches unsubmitted deals from the database and submits them to the Spark API.
  *
  * @param {PgPool} pgPool
- * @param {string} sparkApiBaseURL
- * @param {string} dealIngestionAccessToken
+ * @param {object} args
+ * @param {string} args.sparkApiBaseUrl
+ * @param {string} args.dealIngestionAccessToken
+ * @param {number} args.dealSubmitterBatchSize
  */
-const sparkApiDealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
-  const batchSize = Number(DEAL_SUBMITTER_BATCH_SIZE)
-  const submitDeals = submitDealsToSparkApi(sparkApiBaseURL, dealIngestionAccessToken)
+const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, dealIngestionAccessToken, dealSubmitterBatchSize }) => {
+  const submitDeals = submitDealsToSparkApi(sparkApiBaseUrl, dealIngestionAccessToken)
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitUnsubmittedDeals(pgPool, batchSize, submitDeals)
+      await findAndSubmitUnsubmittedDeals(pgPool, dealSubmitterBatchSize, submitDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -103,5 +104,9 @@ const sparkApiDealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionA
 
 await Promise.all([
   dealObserverLoop(rpcRequest, pgPool),
-  sparkApiDealSubmitterLoop(pgPool, SPARK_API_BASE_URL, DEAL_INGESTER_TOKEN)
+  sparkApiDealSubmitterLoop(pgPool, {
+    sparkApiBaseUrl: SPARK_API_BASE_URL,
+    dealIngestionAccessToken: DEAL_INGESTER_TOKEN,
+    dealSubmitterBatchSize: Number(DEAL_SUBMITTER_BATCH_SIZE)
+  })
 ])
