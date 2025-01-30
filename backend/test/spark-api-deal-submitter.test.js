@@ -25,13 +25,13 @@ describe('spark-api-deal-submitter', () => {
 
   describe('spark api deal submitter', () => {
     it('finds and submits eligible deals to the spark api', async () => {
-      // This deal is eligible
+      // This deal is eligible for submission
       await givenActiveDeal(pgPool, { minerId: 0, createdAt: daysAgo(3), startsAt: today(), expiresAt: daysFromNow(10), payloadCid: 'cidone' })
-      // This deal is not eligible because it has no payload cid
+      // This deal is not eligible for submission because it has no payload cid
       await givenActiveDeal(pgPool, { minerId: 1, createdAt: daysAgo(3), startsAt: today(), expiresAt: daysFromNow(10) })
-      // This deal is not eligible because it was created less than 2 days ago
+      // This deal is not eligible for submission because it was created less than 2 days ago
       await givenActiveDeal(pgPool, { minerId: 2, createdAt: today(), startsAt: today(), expiresAt: daysFromNow(10), payloadCid: 'cidtwo' })
-      // This deal is not eligible because it has expired
+      // This deal is not eligible for submission because it has expired
       await givenActiveDeal(pgPool, { minerId: 3, createdAt: daysAgo(10), startsAt: daysAgo(10), expiresAt: daysAgo(5), payloadCid: 'cidthree' })
 
       const mockSubmitEligibleDeals = (_url, _token) => mock.fn()
