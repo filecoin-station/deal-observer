@@ -14,7 +14,7 @@ const {
   INFLUXDB_TOKEN,
   SPARK_API_BASE_URL,
   DEAL_INGESTER_TOKEN,
-  DEAL_INGESTER_BATCH_SIZE = 100
+  DEAL_INGESTER_BATCH_SIZE: DEAL_SUBMITTER_BATCH_SIZE = 100
 } = process.env
 
 if (!INFLUXDB_TOKEN) {
@@ -69,13 +69,14 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
 }
 
 /**
- *
+ * Periodically fetches unsubmitted deals from the database and submits them to the Spark API.
+ * 
  * @param {PgPool} pgPool
  * @param {string} sparkApiBaseURL
  * @param {string} dealIngestionAccessToken
  */
 const sparkApiDealSubmitterLoop = async (pgPool, sparkApiBaseURL, dealIngestionAccessToken) => {
-  const batchSize = Number(DEAL_INGESTER_BATCH_SIZE)
+  const batchSize = Number(DEAL_SUBMITTER_BATCH_SIZE)
   const submitDeals = submitDealsToSparkApi(sparkApiBaseURL, dealIngestionAccessToken)
   while (true) {
     const start = Date.now()
