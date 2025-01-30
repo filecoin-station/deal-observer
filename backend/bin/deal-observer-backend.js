@@ -6,7 +6,6 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import assert from 'node:assert'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -16,8 +15,6 @@ const LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
-const maxPastEpochs = 1999
-assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 
 const LOOP_NAME = 'Built-in actor events'
@@ -31,7 +28,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.activated_at_epoch : currentChainHead.Height - maxPastEpochs
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.activated_at_epoch : currentFinalizedChainHead - 1
       for (let epoch = lastEpochStored + 1; epoch <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
