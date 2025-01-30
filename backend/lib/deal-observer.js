@@ -13,9 +13,10 @@ import { convertBlockEventToActiveDealDbEntry } from './utils.js'
  * @param {(method:string,params:object) => object} makeRpcRequest
  * @returns {Promise<void>}
  */
-export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
+export async function observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest) {
   const eventType = 'claim'
   const blockEvents = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
+  console.log(`Block height: ${blockHeight}, received ${blockEvents.length} ${eventType} events`)
   await storeActiveDeals(blockEvents.map((event) => convertBlockEventToActiveDealDbEntry(event)), pgPool)
 }
 
@@ -23,9 +24,9 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
  * @param {Queryable} pgPool
  * @returns {Promise<Static<typeof ActiveDealDbEntry> | null>}
  */
-export async function fetchDealWithHighestActivatedEpoch (pgPool) {
+export async function fetchDealWithHighestActivatedEpoch(pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = await loadDeals(pgPool, query)
+  const result = await parseDeals(pgPool, query)
   return result.length > 0 ? result[0] : null
 }
 
@@ -34,7 +35,7 @@ export async function fetchDealWithHighestActivatedEpoch (pgPool) {
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
-export async function storeActiveDeals (activeDeals, pgPool) {
+export async function storeActiveDeals(activeDeals, pgPool) {
   if (activeDeals.length === 0) {
     return
   }
@@ -102,7 +103,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
    * @param {string} query
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
-export async function loadDeals (pgPool, query) {
+export async function parseDeals(pgPool, query) {
   const result = (await pgPool.query(query)).rows.map(deal => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {
