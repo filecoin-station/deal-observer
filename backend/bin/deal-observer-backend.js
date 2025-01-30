@@ -70,7 +70,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
 
 /**
  * Periodically fetches unsubmitted deals from the database and submits them to the Spark API.
- * 
+ *
  * @param {PgPool} pgPool
  * @param {string} sparkApiBaseURL
  * @param {string} dealIngestionAccessToken
