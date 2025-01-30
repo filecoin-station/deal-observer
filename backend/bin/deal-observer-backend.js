@@ -15,6 +15,8 @@ const LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
+// The free tier of the Glif RPC endpoint allows for 100 requests per minute.
+const maximumRequestsPerMinute = 100
 const pgPool = await createPgPool()
 
 const LOOP_NAME = 'Built-in actor events'
@@ -28,7 +30,9 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
       // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.activated_at_epoch : currentFinalizedChainHead - 1
+      // If there are no deals in the database we start from the current chain head - and use the maximum number of requests we can perform per minute as a lower bound.
+      // This is to avoid hitting the rate limit of the glif rpc endpoint and introduces more recilience to database gaps.
+      const lastEpochStored = lastInsertedDeal ? lastInsertedDeal.activated_at_epoch : currentFinalizedChainHead - maximumRequestsPerMinute
       for (let epoch = lastEpochStored + 1; epoch <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
