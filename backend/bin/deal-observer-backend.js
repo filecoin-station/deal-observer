@@ -41,14 +41,6 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
         startEpoch = lastInsertedDeal.activated_at_epoch + 1
       }
 
-      console.log({
-        currentChainHead,
-        currentFinalizedChainHead,
-        currentMaxPastEpoch,
-        startEpoch,
-        lastDealActivatedAtEpoch: lastInsertedDeal?.activated_at_epoch
-      })
-
       for (let epoch = startEpoch; epoch <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
