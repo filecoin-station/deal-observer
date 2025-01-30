@@ -93,8 +93,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
     // If any error occurs, roll back the transaction
     // TODO: Add sentry entry for this error
     // https://github.com/filecoin-station/deal-observer/issues/28
-    error.message = `Error inserting deals: ${error.message}`
-    throw error
+    throw Error('Error inserting deals', { cause: error })
   }
 }
 

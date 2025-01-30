@@ -3,6 +3,7 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
+import * as util from 'node:util'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
 import pRetry from 'p-retry'
 /** @import { Static } from '@sinclair/typebox' */
@@ -32,12 +33,10 @@ export const rpcRequest = async (method, params) => {
       const parsedRpcResponse = Value.Parse(RpcRespone, json).result
       return parsedRpcResponse
     } catch (error) {
-      error.message = `Failed to parse RPC response: ${error.message}. Json Response: ${JSON.stringify(json)}`
-      throw error
+      throw Error(util.format('Failed to parse RPC response: %o', json), { cause: error })
     }
   } catch (error) {
-    error.message = `Failed to make RPC request ${method}: ${error.message}`
-    throw error
+    throw Error(`Failed to make RPC request ${method}`, { cause: error })
   }
 }
 /**
