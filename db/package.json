@@ -12,6 +12,7 @@
     "standard": "^17.1.2"
   },
   "dependencies": {
+    "@sinclair/typebox": "^0.34.15",
     "pg": "^8.13.1",
     "postgrator": "^8.0.0"
   }
