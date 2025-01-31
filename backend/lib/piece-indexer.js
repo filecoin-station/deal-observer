@@ -14,13 +14,11 @@ import * as util from 'node:util'
  * @returns {Promise<void>}
  */
 export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, makePixRequest) {
-  const updatedDeals = []
   for (const deal of activeDeals) {
     const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, makePixRequest)
     deal.payload_cid = payloadCid
-    updatedDeals.push(deal)
+    await updatePayloadInActiveDeal(pgPool, deal)
   }
-  await updatePayloadInActiveDeals(pgPool, updatedDeals)
 }
 
 /**
@@ -52,31 +50,29 @@ export async function fetchDealsWithNoPayloadCid (pgPool, limit) {
 
 /**
  * @param {Queryable} pgPool
- * @param {Array<Static<typeof ActiveDealDbEntry>>} deals
+ * @param {Static<typeof ActiveDealDbEntry>} deal
  * @returns { Promise<void>}
  */
-async function updatePayloadInActiveDeals (pgPool, deals) {
+async function updatePayloadInActiveDeal (pgPool, deal) {
   const updateQuery = `
-      UPDATE active_deals
-      SET payload_cid = $1
-      WHERE activated_at_epoch = $2 AND miner_id = $3 AND client_id = $4 AND piece_cid = $5 AND piece_size = $6 AND term_start_epoch = $7 AND term_min = $8 AND term_max = $9 AND sector_id = $10
-    `
-  for (const deal of deals) {
-    try {
-      await pgPool.query(updateQuery, [
-        deal.payload_cid,
-        deal.activated_at_epoch,
-        deal.miner_id,
-        deal.client_id,
-        deal.piece_cid,
-        deal.piece_size,
-        deal.term_start_epoch,
-        deal.term_min,
-        deal.term_max,
-        deal.sector_id
-      ])
-    } catch (error) {
-      throw Error(util.format('Error updating payload of deal: ', deal), { cause: error })
-    }
+    UPDATE active_deals
+    SET payload_cid = $1
+    WHERE activated_at_epoch = $2 AND miner_id = $3 AND client_id = $4 AND piece_cid = $5 AND piece_size = $6 AND term_start_epoch = $7 AND term_min = $8 AND term_max = $9 AND sector_id = $10
+  `
+  try {
+    await pgPool.query(updateQuery, [
+      deal.payload_cid,
+      deal.activated_at_epoch,
+      deal.miner_id,
+      deal.client_id,
+      deal.piece_cid,
+      deal.piece_size,
+      deal.term_start_epoch,
+      deal.term_min,
+      deal.term_max,
+      deal.sector_id
+    ])
+  } catch (error) {
+    throw Error(util.format('Error updating payload of deal: ', deal), { cause: error })
   }
 }
