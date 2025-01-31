@@ -13,7 +13,7 @@ import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spa
 const {
   INFLUXDB_TOKEN,
   SPARK_API_BASE_URL,
-  DEAL_INGESTER_TOKEN,
+  SPARK_API_TOKEN,
   DEAL_INGESTER_BATCH_SIZE: DEAL_SUBMITTER_BATCH_SIZE = 100
 } = process.env
 
@@ -21,7 +21,7 @@ if (!INFLUXDB_TOKEN) {
   console.error('INFLUXDB_TOKEN not provided. Telemetry will not be recorded.')
 }
 assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
-assert(DEAL_INGESTER_TOKEN, 'DEAL_INGESTER_TOKEN required')
+assert(SPARK_API_TOKEN, 'SPARK_API_TOKEN required')
 
 const DEAL_OBSERVER_LOOP_INTERVAL = 10 * 1000
 const DEAL_SUBMITTER_LOOP_INTERVAL = 10 * 1000
@@ -82,11 +82,11 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
  * @param {PgPool} pgPool
  * @param {object} args
  * @param {string} args.sparkApiBaseUrl
- * @param {string} args.dealIngestionAccessToken
+ * @param {string} args.sparkApiToken
  * @param {number} args.dealSubmitterBatchSize
  */
-const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, dealIngestionAccessToken, dealSubmitterBatchSize }) => {
-  const submitDeals = submitDealsToSparkApi(sparkApiBaseUrl, dealIngestionAccessToken)
+const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, dealSubmitterBatchSize }) => {
+  const submitDeals = submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken)
   while (true) {
     const start = Date.now()
     try {
@@ -114,7 +114,7 @@ await Promise.all([
   dealObserverLoop(rpcRequest, pgPool),
   sparkApiDealSubmitterLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
-    dealIngestionAccessToken: DEAL_INGESTER_TOKEN,
+    sparkApiToken: SPARK_API_TOKEN,
     dealSubmitterBatchSize: Number(DEAL_SUBMITTER_BATCH_SIZE)
   })
 ])

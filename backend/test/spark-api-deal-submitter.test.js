@@ -7,7 +7,7 @@ import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-deal-submitter.j
 describe('spark-api-deal-submitter', () => {
   let pgPool
   const sparkApiBaseURL = 'http://localhost:8080'
-  const dealIngestionAccessToken = 'test'
+  const sparkApiToken = 'test'
   const batchSize = 100
 
   before(async () => {
@@ -35,7 +35,7 @@ describe('spark-api-deal-submitter', () => {
       await givenActiveDeal(pgPool, { minerId: 3, createdAt: daysAgo(10), startsAt: daysAgo(10), expiresAt: daysAgo(5), payloadCid: 'cidthree' })
 
       const mockSubmitEligibleDeals = (_url, _token) => mock.fn()
-      const mockSubmit = mockSubmitEligibleDeals(sparkApiBaseURL, dealIngestionAccessToken)
+      const mockSubmit = mockSubmitEligibleDeals(sparkApiBaseURL, sparkApiToken)
 
       await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmit)
       const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')

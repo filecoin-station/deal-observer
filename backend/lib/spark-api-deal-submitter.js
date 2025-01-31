@@ -107,16 +107,16 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  * Submits deals to a spark api.
  *
  * @param {string} sparkApiBaseURL
- * @param {string} dealIngestionAccessToken
+ * @param {string} sparkApiToken
  * @returns {(eligibleDeals: Array) => Promise<void>}
  */
-export const submitDealsToSparkApi = (sparkApiBaseURL, dealIngestionAccessToken) => async (unsubmittedDeals) => {
+export const submitDealsToSparkApi = (sparkApiBaseURL, sparkApiToken) => async (unsubmittedDeals) => {
   console.debug(`Submitting ${unsubmittedDeals.length} deals to Spark API`)
   const response = await fetch(`${sparkApiBaseURL}/eligible-deals-batch`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${dealIngestionAccessToken}`
+      Authorization: `Bearer ${sparkApiToken}`
     },
     body: JSON.stringify(unsubmittedDeals)
   })
