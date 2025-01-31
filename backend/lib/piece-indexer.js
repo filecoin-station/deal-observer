@@ -21,6 +21,16 @@ export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, maxDea
 }
 
 /**
+   * @param {Queryable} pgPool
+   * @param {number} maxDeals
+   * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
+   */
+export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
+  const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${maxDeals}`
+  return await loadDeals(pgPool, query)
+}
+
+/**
  * @param {Queryable} pgPool
  * @param {function} makeRpcRequest
  *  @param {function} makePixRequest
@@ -32,16 +42,6 @@ export async function updatePayloadCid (pgPool, makeRpcRequest, makePixRequest, 
   if (!payloadCid) return
   deal.payload_cid = payloadCid
   await updatePayloadInActiveDeal(pgPool, deal)
-}
-
-/**
-   * @param {Queryable} pgPool
-   * @param {number} maxDeals
-   * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
-   */
-export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
-  const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${maxDeals}`
-  return await loadDeals(pgPool, query)
 }
 
 /**
