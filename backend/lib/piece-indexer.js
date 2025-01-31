@@ -1,5 +1,5 @@
 import { fetchPayloadCid } from './pix-service/service.js'
-import { parseDeals } from './deal-observer.js'
+import { loadDeals } from './deal-observer.js'
 import assert from 'node:assert'
 import * as util from 'node:util'
 
@@ -47,7 +47,7 @@ export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, queryL
 export async function fetchDealsWithNoPayloadCid (pgPool, limit) {
   assert(typeof limit === 'number', 'limit must be a number')
   const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${limit}`
-  return await parseDeals(pgPool, query)
+  return await loadDeals(pgPool, query)
 }
 
 /**

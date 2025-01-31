@@ -25,7 +25,7 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
-  const result = await parseDeals(pgPool, query)
+  const result = await loadDeals(pgPool, query)
   return result.length > 0 ? result[0] : null
 }
 
@@ -98,7 +98,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
    * @param {string} query
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
-export async function parseDeals (pgPool, query) {
+export async function loadDeals (pgPool, query) {
   const result = (await pgPool.query(query)).rows.map(deal => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {
