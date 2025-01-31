@@ -1,3 +1,4 @@
+import assert from 'node:assert'
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
 import timers from 'node:timers/promises'
@@ -6,7 +7,6 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import assert from 'node:assert'
 import { indexPieces } from '../lib/piece-indexer.js'
 
 const { INFLUXDB_TOKEN } = process.env
