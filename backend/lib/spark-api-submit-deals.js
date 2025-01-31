@@ -136,7 +136,11 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
   if (!response.ok) {
     let msg = `Failed to submit deals (status ${response.status}): ${await response.text().catch(() => null)}`
     if (response.status === 400) {
-      msg += `\ndeals[0]: ${JSON.stringify(deals[0])}`
+      const stringified = JSON.stringify(
+        deals[0],
+        (_, v) => typeof v === 'bigint' ? `<bigint> ${v.toString()}` : v
+      )
+      msg += `\ndeals[0]: ${stringified}}`
     }
     throw new Error(msg)
   }
