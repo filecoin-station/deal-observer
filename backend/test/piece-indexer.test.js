@@ -24,10 +24,7 @@ describe('deal-observer-backend piece indexer', () => {
   }
   const getDealPayloadCid = async (providerId, pieceCid) => {
     const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
-    // TODO: handle the case where the payloadCid is not found
-    // For now we return a default payloadCid if there is a missing payload CID
-    // See https://github.com/filecoin-station/deal-observer/pull/31
-    return payloadCid ? payloadCid.payloadCid : 'baga6ea4seaqepbqg7dxrdphrvusy3pmc5lelcczwwi5nydduyog655wgnby4ijq'
+    return payloadCid?.payloadCid
   }
   let pgPool
   before(async () => {
@@ -49,8 +46,14 @@ describe('deal-observer-backend piece indexer', () => {
   })
 
   it('piece indexer loop function fetches deals where there exists not payload yet and updates the database entry', async (t) => {
-    assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length, 255)
+    assert.strictEqual(
+      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length,
+      255
+    )
     await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
-    assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length, 0)
+    assert.strictEqual(
+      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length,
+      0
+    )
   })
 })
