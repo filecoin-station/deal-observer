@@ -28,6 +28,7 @@ const SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL = 10 * 1000
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
+// The free tier of the glif rpc endpoint only allows us to go back 2000 blocks.
 const maxPastEpochs = 1999
 
 assert(finalityEpochs <= maxPastEpochs)
@@ -43,17 +44,14 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
     const start = Date.now()
     try {
       const currentChainHead = await getChainHead(makeRpcRequest)
-      const currentFinalizedChainHead = currentChainHead.Height - finalityEpochs
-      const currentMaxPastEpoch = currentChainHead.Height - maxPastEpochs
-      // If the storage is empty we start 2000 blocks into the past as that is the furthest we can go with the public glif rpc endpoints.
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      let startEpoch = currentFinalizedChainHead
-      // The free tier of the glif rpc endpoint only allows us to go back 2000 blocks.
-      if (lastInsertedDeal && lastInsertedDeal.activated_at_epoch + 1 >= currentMaxPastEpoch) {
-        startEpoch = lastInsertedDeal.activated_at_epoch + 1
-      }
+      const startEpoch = Math.max(
+        currentChainHead.Height - maxPastEpochs,
+        (lastInsertedDeal?.activated_at_epoch + 1) || 0
+      )
+      const endEpoch = currentChainHead.Height - finalityEpochs
 
-      for (let epoch = startEpoch; epoch <= currentFinalizedChainHead; epoch++) {
+      for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
     } catch (e) {
