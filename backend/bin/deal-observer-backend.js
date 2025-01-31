@@ -23,7 +23,7 @@ if (!INFLUXDB_TOKEN) {
 assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
 assert(SPARK_API_TOKEN, 'SPARK_API_TOKEN required')
 
-const OBSERVE_DEALS_LOOP_INTERVAL = 10 * 1000
+const OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL = 10 * 1000
 const SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL = 10 * 1000
 
 // Filecoin will need some epochs to reach finality.
@@ -61,12 +61,12 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 
     if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', OBSERVE_DEALS_LOOP_INTERVAL)
+        point.intField('interval_ms', OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
     }
-    if (dt < OBSERVE_DEALS_LOOP_INTERVAL) {
-      await timers.setTimeout(OBSERVE_DEALS_LOOP_INTERVAL - dt)
+    if (dt < OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL) {
+      await timers.setTimeout(OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL - dt)
     }
   }
 }
@@ -103,7 +103,7 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
         point.intField('duration_ms', dt)
       })
     }
-    if (dt < OBSERVE_DEALS_LOOP_INTERVAL) {
+    if (dt < OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL) {
       await timers.setTimeout(SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL - dt)
     }
   }
