@@ -16,7 +16,11 @@ import * as util from 'node:util'
  */
 export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
-    await updatePayloadCid(pgPool, makeRpcRequest, getDealPayloadCid, deal)
+    const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, getDealPayloadCid)
+    if (payloadCid) {
+      deal.payload_cid = payloadCid
+      await updatePayloadInActiveDeal(pgPool, deal)
+    }
   }
 }
 
@@ -28,20 +32,6 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
   const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
   return await loadDeals(pgPool, query, [maxDeals])
-}
-
-/**
- * @param {Queryable} pgPool
- * @param {function} makeRpcRequest
- *  @param {function} getDealPayloadCid
- * @param {Static<typeof ActiveDealDbEntry>} deal
- * @returns {Promise<void>}
- */
-export async function updatePayloadCid (pgPool, makeRpcRequest, getDealPayloadCid, deal) {
-  const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, getDealPayloadCid)
-  if (!payloadCid) return
-  deal.payload_cid = payloadCid
-  await updatePayloadInActiveDeal(pgPool, deal)
 }
 
 /**
