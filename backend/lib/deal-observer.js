@@ -35,7 +35,7 @@ export async function fetchDealWithHighestActivatedEpoch (pgPool) {
  * @param {Queryable} pgPool
  * @returns {Promise<number>}
  * */
-export async function fetchNumberOfStoredActiveDeals (pgPool) {
+export async function countStoredActiveDeals (pgPool) {
   const query = 'SELECT COUNT(*) FROM active_deals'
   const result = await pgPool.query(query)
   return result.rows.length > 0 ? result.rows[0].count : 0
