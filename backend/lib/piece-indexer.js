@@ -1,6 +1,6 @@
-import { fetchPayloadCid } from './pix-service/service.js'
 import { loadDeals } from './deal-observer.js'
 import * as util from 'node:util'
+import { getMinerPeerId } from './rpc-service/service.js'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
@@ -16,7 +16,8 @@ import * as util from 'node:util'
  */
 export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
-    const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, getDealPayloadCid)
+    const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
+    const payloadCid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (payloadCid) {
       deal.payload_cid = payloadCid
       await updatePayloadInActiveDeal(pgPool, deal)

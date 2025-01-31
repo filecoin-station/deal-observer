@@ -1,8 +1,11 @@
+import { Type } from '@sinclair/typebox'
 import { Value } from '@sinclair/typebox/value'
-import { PIECE_INDEXER_URL } from '../config.js'
-import { getMinerPeerId } from '../rpc-service/service.js'
-import { PixResponse } from './data-types.js'
+import { PIECE_INDEXER_URL } from './config.js'
 import pRetry from 'p-retry'
+
+const PieceIndexerResponse = Type.Object({
+  samples: Type.Array(Type.String())
+})
 
 /**
  * @param {string} providerId
@@ -18,7 +21,7 @@ export const getDealPayloadCid = async (providerId, pieceCid) => {
     }), { retries: 5 })
     const json = await response.json()
     try {
-      const parsedPixResponse = Value.Parse(PixResponse, json)
+      const parsedPixResponse = Value.Parse(PieceIndexerResponse, json)
       return parsedPixResponse.samples.length === 0
         ? null
         : parsedPixResponse.samples[0]
@@ -28,15 +31,4 @@ export const getDealPayloadCid = async (providerId, pieceCid) => {
   } catch (e) {
     throw new Error('Failed to make RPC request.', { cause: e })
   }
-}
-
-/**
-* @param {number} providerId
-* @param {string} pieceCid
-* @returns {Promise<string>}
-*/
-export async function fetchPayloadCid (providerId, pieceCid, makeRpcRequest, getDealPayloadCid) {
-  const minerPeerId = await getMinerPeerId(providerId, makeRpcRequest)
-  const payloadCid = await getDealPayloadCid(minerPeerId, pieceCid)
-  return payloadCid
 }

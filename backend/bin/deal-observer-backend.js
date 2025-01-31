@@ -10,7 +10,7 @@ import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
-import { getDealPayloadCid } from '../lib/pix-service/service.js'
+import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 
 const {
   INFLUXDB_TOKEN,
