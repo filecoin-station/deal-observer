@@ -83,11 +83,14 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
  * @param {number} args.sparkApiSubmitDealsBatchSize
  */
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
-  const submitDeals = submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken)
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitUnsubmittedDeals(pgPool, sparkApiSubmitDealsBatchSize, submitDeals)
+      await findAndSubmitUnsubmittedDeals(
+        pgPool,
+        sparkApiSubmitDealsBatchSize,
+        deals => submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken, deals)
+      )
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
