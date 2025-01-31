@@ -29,6 +29,11 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
  * For deals to be submitted they must
  * - have not been submitted yet
  * - were created more than 2 days ago
+ *     Explanation by @pyropy:
+ *     > This due that whole implication of overriding deals ingested by
+ *     > fil-deal-ingester. Observed deals might lack Payload CID (it's set to
+ *     > null) and that might override Payload CID that's already in the
+ *     > database)
  * - have payload cid
  * - have not yet expired
  *
