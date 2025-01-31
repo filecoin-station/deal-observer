@@ -44,11 +44,11 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
       for (let epoch = startEpoch; epoch <= currentFinalizedChainHead; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
-      const newLastInsertDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+      const newLastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
       const numberOfStoredDeals = await fetchNumberOfStoredActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
-          point.intField('last_searched_epoch', newLastInsertDeal.activated_at_epoch)
+          point.intField('last_searched_epoch', newLastInsertedDeal.activated_at_epoch)
           point.intField('number_of_stored_active_deals', numberOfStoredDeals)
         })
       }
