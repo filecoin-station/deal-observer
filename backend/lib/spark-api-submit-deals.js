@@ -13,7 +13,9 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
   for await (const unsubmittedDeals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${unsubmittedDeals.length} unsubmitted deals`)
     try {
-      const formattedDeals = formatDealsForSparkApi(unsubmittedDeals)
+      const formattedDeals = unsubmittedDeals.map(deal => {
+        return formatDealForSparkApi(deal)
+      })
       await submitDeals(formattedDeals)
       console.debug(`Successfully submitted ${formattedDeals.length} deals`)
       await markDealsAsSubmitted(pgPool, unsubmittedDeals)
@@ -70,18 +72,18 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
 /**
  * Format unsubmitted deals to format expected by spark api.
  *
- * @param {Array} deals
- * @returns {Array}
+ * @param {object} deal
+ * @returns {object}
 */
-const formatDealsForSparkApi = (deals) => {
-  return deals.map(deal => ({
+const formatDealForSparkApi = (deal) => {
+  return {
     minerId: deal.miner_id,
     clientId: deal.client_id,
     pieceCid: deal.piece_cid,
     pieceSize: deal.piece_size.toString(),
     payloadCid: deal.payload_cid,
     expiresAt: deal.expires_at
-  }))
+  }
 }
 
 /**
