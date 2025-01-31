@@ -1,4 +1,4 @@
-import { RPC_URL } from '../config.js'
+import { RPC_URL, rpcHeaders } from '../config.js'
 import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
@@ -14,18 +14,29 @@ import pRetry from 'p-retry'
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
+  const headers = {
+    ...rpcHeaders,
+    'content-type': 'application/json'
+  }
   try {
     const response = await pRetry(async () => await fetch(RPC_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers,
       body: reqBody
     }), { retries: 5 })
     if (!response.ok) {
       throw new Error(`Fetch failed - HTTP ${response.status}: ${await response.text().catch(() => null)}`)
     }
-    return Value.Parse(RpcRespone, await response.json()).result
+    const json = await response.json()
+    try {
+      const parsedRpcResponse = Value.Parse(RpcRespone, json).result
+      return parsedRpcResponse
+    } catch (error) {
+      error.message = `Failed to parse RPC response: ${error.message}. Json Response: ${JSON.stringify(json)}`
+      throw error
+    }
   } catch (error) {
-    error.message = `Failed to make RPC request ${method}: ${error.message}`
+    error.message = `Failed to make RPC request ${method}: ${error.message}\nRequest was: ${JSON.stringify(reqBody)}.`
     throw error
   }
 }
