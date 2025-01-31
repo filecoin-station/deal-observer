@@ -1,5 +1,6 @@
 /** @import {PgPool, Queryable} from '@filecoin-station/deal-observer-db' */
 import Cursor from 'pg-cursor'
+import * as Sentry from '@sentry/node'
 
 /**
  * Finds deals that haven't been submitted to the Spark API yet and submits them.
@@ -18,6 +19,7 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
       await markDealsAsSubmitted(pgPool, deals)
     } catch (e) {
       console.error('Failed to submit deals:', e)
+      Sentry.captureException(e)
     }
   }
 }
