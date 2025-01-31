@@ -1,5 +1,4 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-/** @import { BlockEvent } from './rpc-service/data-types.js' */
 /** @import { Static } from '@sinclair/typebox' */
 
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
