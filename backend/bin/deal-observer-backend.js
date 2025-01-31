@@ -122,14 +122,14 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
-export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) => {
+export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
   const LOOP_NAME = 'Piece Indexer'
   while (true) {
     const start = Date.now()
     // Maximum number of deals to index in one loop iteration
     const maxDeals = 1000
     try {
-      indexPieces(makeRpcRequest, makePixRequest, pgPool, maxDeals)
+      indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
