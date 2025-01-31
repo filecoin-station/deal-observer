@@ -33,9 +33,9 @@ describe('Submit deals to spark-api', () => {
     const batchSize = 10
     const mockSubmitEligibleDeals = mock.fn()
 
-    const submittedDealsCount = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
-    assert.strictEqual(submittedDealsCount, 2)
+    assert.strictEqual(numberOfSubmittedDeals, 2)
     assert.strictEqual(rows.length, 2)
     assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 1)
   })
@@ -45,9 +45,9 @@ describe('Submit deals to spark-api', () => {
     const mockSubmitEligibleDeals = mock.fn()
 
     // two deals are eligible for submission, batchSize is 1
-    const submittedDealsCount = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
-    assert.strictEqual(submittedDealsCount, 2)
+    assert.strictEqual(numberOfSubmittedDeals, 2)
     assert.strictEqual(rows.length, 2)
     assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
   })
@@ -60,9 +60,9 @@ describe('Submit deals to spark-api', () => {
     mockSubmitEligibleDeals.mock.mockImplementationOnce(() => { throw new Error('submit failed') })
 
     // two deals are eligible for submission, batchSize is 1
-    const submittedDealsCount = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
-    assert.strictEqual(submittedDealsCount, 1)
+    assert.strictEqual(numberOfSubmittedDeals, 1)
     assert.strictEqual(rows.length, 1)
     assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
   })
