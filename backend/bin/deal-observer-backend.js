@@ -49,7 +49,6 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
       let startEpoch = currentFinalizedChainHead
       // The free tier of the glif rpc endpoint only allows us to go back 2000 blocks.
-      // We mustn't go further back than that.
       if (lastInsertedDeal && lastInsertedDeal.activated_at_epoch + 1 >= currentMaxPastEpoch) {
         startEpoch = lastInsertedDeal.activated_at_epoch + 1
       }
