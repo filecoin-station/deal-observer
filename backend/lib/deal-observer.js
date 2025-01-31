@@ -94,10 +94,11 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 /**
    * @param {Queryable} pgPool
    * @param {string} query
+   * @param {Array} args
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
-export async function loadDeals (pgPool, query) {
-  const result = (await pgPool.query(query)).rows.map(deal => {
+export async function loadDeals (pgPool, query, args = []) {
+  const result = (await pgPool.query(query, args)).rows.map(deal => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {
       if (deal[key] === null) {

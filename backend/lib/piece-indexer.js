@@ -26,8 +26,8 @@ export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, maxDea
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
-  const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${maxDeals}`
-  return await loadDeals(pgPool, query)
+  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
+  return await loadDeals(pgPool, query, [maxDeals])
 }
 
 /**
