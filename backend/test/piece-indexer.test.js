@@ -38,22 +38,25 @@ describe('deal-observer-backend piece indexer', () => {
 
   beforeEach(async () => {
     await pgPool.query('DELETE FROM active_deals')
-    for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {
+    const startEpoch = 4622129
+    for (let blockHeight = startEpoch; blockHeight < startEpoch + 10; blockHeight++) {
       await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
     }
-    const allDeals = await pgPool.query('SELECT * FROM active_deals WHERE activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')
-    assert.strictEqual(allDeals.rows.length, 255)
+    assert.strictEqual(
+      (await pgPool.query('SELECT * FROM active_deals')).rows.length,
+      336
+    )
   })
 
-  it('piece indexer loop function fetches deals where there exists not payload yet and updates the database entry', async (t) => {
+  it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     assert.strictEqual(
-      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length,
-      255
+      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
+      336
     )
     await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
     assert.strictEqual(
-      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length,
-      0
+      (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
+      85 // Not all deals have a payload CID in the test data
     )
   })
 })
