@@ -1,5 +1,5 @@
 import assert from 'node:assert'
-import { after, before, beforeEach, describe, it, afterEach } from 'node:test'
+import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { Value } from '@sinclair/typebox/value'
