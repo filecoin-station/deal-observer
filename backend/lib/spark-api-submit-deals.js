@@ -7,7 +7,7 @@ import * as Sentry from '@sentry/node'
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @param {(eligibleDeals: Array) => Promise<void>} submitDeals
+ * @param {(eligibleDeals: Array) => Promise<{ingested: number; skipped: number}>} submitDeals
  * @returns {Promise<number>} Number of deals submitted
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
@@ -16,8 +16,9 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
   for await (const deals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${deals.length} unsubmitted deals`)
     try {
-      await submitDeals(deals)
-      console.debug(`Successfully submitted ${deals.length} deals`)
+      const { ingested, skipped } = await submitDeals(deals)
+      console.log(`Successfully submitted ${deals.length} deals. ${ingested} deals were added, ${skipped} were skipped.`)
+      // TODO: report {deals.length, ingested, skipped} to InfluxDB
       await markDealsAsSubmitted(pgPool, deals)
       numberOfSubmittedDeals += deals.length
     } catch (e) {
@@ -94,9 +95,9 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
         unnest($3::TEXT[]) AS piece_cid,
         unnest($4::BIGINT[]) AS piece_size
     ) AS t
-    WHERE ad.miner_id = t.miner_id 
-      AND ad.client_id = t.client_id 
-      AND ad.piece_cid = t.piece_cid 
+    WHERE ad.miner_id = t.miner_id
+      AND ad.client_id = t.client_id
+      AND ad.piece_cid = t.piece_cid
       AND ad.piece_size = t.piece_size
   `, [
     eligibleDeals.map(deal => deal.miner_id),
@@ -112,7 +113,7 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  * @param {string} sparkApiBaseURL
  * @param {string} sparkApiToken
  * @param {Array} deals
- * @returns {Promise<void>}
+ * @returns {Promise<{ingested: number; skipped: number}>}
  */
 export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deals) => {
   console.debug(`Submitting ${deals.length} deals to Spark API`)
@@ -137,4 +138,8 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
       `Failed to submit deals (status ${response.status}): ${await response.text().catch(() => null)}`
     )
   }
+
+  const result = /** @type {{ingested: number; skipped: number}} */ (await response.json())
+  console.debug(`Successfully submitted ${result.ingested} deals, skipped ${result.skipped} deals`)
+  return result
 }

@@ -31,7 +31,7 @@ describe('Submit deals to spark-api', () => {
 
   it('finds and submits deals to the spark api', async () => {
     const batchSize = 10
-    const mockSubmitEligibleDeals = mock.fn()
+    const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
     const numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
@@ -42,7 +42,7 @@ describe('Submit deals to spark-api', () => {
 
   it('finds and submits deals in two batches to the spark api', async () => {
     const batchSize = 1
-    const mockSubmitEligibleDeals = mock.fn()
+    const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
     // two deals are eligible for submission, batchSize is 1
     const numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
@@ -54,7 +54,7 @@ describe('Submit deals to spark-api', () => {
 
   it('finds and submits deals in two batches to the spark api - first batch fails', async () => {
     const batchSize = 1
-    const mockSubmitEligibleDeals = mock.fn()
+    const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
     // mock the first call to submit deals to fail
     mockSubmitEligibleDeals.mock.mockImplementationOnce(() => { throw new Error('submit failed') })
@@ -71,9 +71,21 @@ describe('Submit deals to spark-api', () => {
 const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
   const { activatedAtEpoch, termStart, termMin, termMax } = calculateActiveDealEpochs(createdAt, startsAt, expiresAt)
   await pgPool.query(
-    `INSERT INTO active_deals 
+    `INSERT INTO active_deals
     (activated_at_epoch, miner_id, client_id, piece_cid, piece_size, sector_id, term_start_epoch, term_min, term_max, payload_cid)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
     [activatedAtEpoch, minerId, clientId, pieceCid, 1024, 6, termStart, termMin, termMax, payloadCid]
+  )
+}
+
+// TODO: allow callers of this helper to define how many deals should be reported as skipped
+const createSubmitEligibleDealsMock = () => {
+  return mock.fn(
+    // original - unused param
+    () => {},
+    // implementation
+    async (deals) => {
+      return { ingested: deals.length, skipped: 0 }
+    }
   )
 }
