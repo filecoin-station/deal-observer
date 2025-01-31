@@ -22,10 +22,6 @@ describe('deal-observer-backend piece indexer', () => {
         console.error('Unknown method')
     }
   }
-  const getDealPayloadCid = async (providerId, pieceCid) => {
-    const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
-    return payloadCid?.payloadCid
-  }
   let pgPool
   before(async () => {
     pgPool = await createPgPool()
@@ -49,11 +45,19 @@ describe('deal-observer-backend piece indexer', () => {
   })
 
   it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
+    const getDealPayloadCidCalls = []
+    const getDealPayloadCid = async (providerId, pieceCid) => {
+      getDealPayloadCidCalls.push({ providerId, pieceCid })
+      const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
+      return payloadCid?.payloadCid
+    }
+
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
     await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    assert.strictEqual(getDealPayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       85 // Not all deals have a payload CID in the test data
