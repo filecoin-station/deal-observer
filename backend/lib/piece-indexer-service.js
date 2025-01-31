@@ -7,6 +7,10 @@ const PieceIndexerResponse = Type.Object({
   samples: Type.Array(Type.String())
 })
 
+const PieceIndexerErrorResponse = Type.Object({
+  error: Type.String()
+})
+
 /**
  * @param {string} providerId
  * @param {string} pieceCid
@@ -20,6 +24,14 @@ export const getDealPayloadCid = async (providerId, pieceCid) => {
       headers: { 'content-type': 'application/json' }
     }), { retries: 5 })
     const json = await response.json()
+
+    try {
+      const parsedPixResponse = Value.Parse(PieceIndexerErrorResponse, json)
+      if (parsedPixResponse.error === 'PROVIDER_OR_PIECE_NOT_FOUND') {
+        return null
+      }
+    } catch {}
+
     try {
       const parsedPixResponse = Value.Parse(PieceIndexerResponse, json)
       return parsedPixResponse.samples.length === 0
