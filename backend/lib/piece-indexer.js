@@ -20,7 +20,7 @@ export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, ma
     deal.payload_cid = payloadCid
     updatedDeals.push(deal)
   }
-  await updatePayloadInActiveDeal(pgPool, updatedDeals)
+  await updatePayloadInActiveDeals(pgPool, updatedDeals)
 }
 
 /**
@@ -55,7 +55,7 @@ export async function fetchDealsWithNoPayloadCid (pgPool, limit) {
  * @param {Array<Static<typeof ActiveDealDbEntry>>} deals
  * @returns { Promise<void>}
  */
-export async function updatePayloadInActiveDeal (pgPool, deals) {
+async function updatePayloadInActiveDeals (pgPool, deals) {
   const updateQuery = `
       UPDATE active_deals
       SET payload_cid = $1
