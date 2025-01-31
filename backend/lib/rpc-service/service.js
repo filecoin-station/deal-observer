@@ -36,7 +36,7 @@ export const rpcRequest = async (method, params) => {
       throw error
     }
   } catch (error) {
-    error.message = `Failed to make RPC request ${method}: ${error.message}`
+    error.message = `Failed to make RPC request ${method}: ${error.message}\nRequest was: ${JSON.stringify(reqBody)}.`
     throw error
   }
 }
