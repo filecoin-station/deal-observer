@@ -93,9 +93,10 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
   const LOOP_NAME = 'Submit deals to spark-api'
   while (true) {
+    let numberOfSubmittedDeals = 0
     const start = Date.now()
     try {
-      await findAndSubmitUnsubmittedDeals(
+      numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(
         pgPool,
         sparkApiSubmitDealsBatchSize,
         deals => submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken, deals)
@@ -111,6 +112,9 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
+      })
+      recordTelemetry('submitted_deals_stats', point => {
+        point.intField('submitted_deals', numberOfSubmittedDeals)
       })
     }
     if (dt < LOOP_INTERVAL) {
