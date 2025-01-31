@@ -7,7 +7,7 @@ import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
-import { fetchDealWithHighestActivatedEpoch, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 
 const {
@@ -51,6 +51,14 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 
       for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
+      }
+      const newLastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+      const numberOfStoredDeals = await countStoredActiveDeals(pgPool)
+      if (INFLUXDB_TOKEN) {
+        recordTelemetry('observed_deals_stats', point => {
+          point.intField('last_searched_epoch', newLastInsertedDeal.activated_at_epoch)
+          point.intField('number_of_stored_active_deals', numberOfStoredDeals)
+        })
       }
     } catch (e) {
       console.error(e)

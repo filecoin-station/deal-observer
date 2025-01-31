@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { fetchDealWithHighestActivatedEpoch, storeActiveDeals } from '../lib/deal-observer.js'
+import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
@@ -72,5 +72,31 @@ describe('deal-observer-backend', () => {
     const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, actual)
+  })
+
+  it('check number of stored deals', async () => {
+    const storeBlockEvent = async (eventData) => {
+      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+      await storeActiveDeals([event], pgPool)
+    }
+    const data = {
+      id: 1,
+      provider: 2,
+      client: 3,
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
+      pieceSize: 4n,
+      termStart: 5,
+      termMin: 12340,
+      termMax: 12340,
+      sector: 6n
+    }
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 0n)
+    await storeBlockEvent(data)
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 1n)
+    // Entries must be unique
+    data.id = 2
+    data.provider = 3
+    await storeBlockEvent(data)
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
   })
 })
