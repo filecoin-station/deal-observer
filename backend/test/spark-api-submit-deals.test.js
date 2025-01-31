@@ -2,9 +2,9 @@ import assert from 'node:assert'
 import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
-import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-deal-submitter.js'
+import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-submit-deals.js'
 
-describe('spark-api-deal-submitter', () => {
+describe('Submit deals to spark-api', () => {
   let pgPool
   const sparkApiBaseURL = 'http://localhost:8080'
   const sparkApiToken = 'test'
