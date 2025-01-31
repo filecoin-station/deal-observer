@@ -1,10 +1,10 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, storeActiveDeals } from '../lib/deal-observer.js'
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
+import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -32,12 +32,12 @@ describe('deal-observer-backend', () => {
       termMin: 12340,
       termMax: 12340,
       sector: 6n,
-      payload_cid: null // not present in event data
+      payload_cid: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-
-    await storeActiveDeals([event], pgPool)
-    const result = await pgPool.query('SELECT * FROM active_deals')
+    const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+    await storeActiveDeals([dbEntry], pgPool)
+    const actualData = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     const expectedData = {
       activated_at_epoch: event.height,
       miner_id: eventData.provider,
@@ -47,11 +47,9 @@ describe('deal-observer-backend', () => {
       term_start_epoch: eventData.termStart,
       term_min: eventData.termMin,
       term_max: eventData.termMax,
-      sector_id: eventData.sector
+      sector_id: eventData.sector,
+      payload_cid: undefined
     }
-    const actualData = result.rows.map((record) => {
-      return Value.Parse(ActiveDealDbEntry, record)
-    })
     assert.deepStrictEqual(actualData, [expectedData])
   })
   it('check retrieval of last stored deal', async () => {
@@ -64,20 +62,22 @@ describe('deal-observer-backend', () => {
       termStart: 5,
       termMin: 12340,
       termMax: 12340,
-      sector: 6n
+      sector: 6n,
+      payload_cid: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-
-    await storeActiveDeals([event], pgPool)
-    const expected = Value.Parse(ActiveDealDbEntry, (await pgPool.query('SELECT * FROM active_deals')).rows[0])
+    const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+    await storeActiveDeals([dbEntry], pgPool)
+    const expected = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
-    assert.deepStrictEqual(expected, actual)
+    assert.deepStrictEqual(expected, [actual])
   })
 
   it('check number of stored deals', async () => {
     const storeBlockEvent = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-      await storeActiveDeals([event], pgPool)
+      const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+      await storeActiveDeals([dbEntry], pgPool)
     }
     const data = {
       id: 1,

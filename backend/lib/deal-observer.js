@@ -1,11 +1,10 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-/** @import { BlockEvent } from './rpc-service/data-types.js' */
 /** @import { Static } from '@sinclair/typebox' */
 
-import assert from 'node:assert'
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
+import { convertBlockEventToActiveDealDbEntry } from './utils.js'
 
 /**
  * @param {number} blockHeight
@@ -15,10 +14,9 @@ import { Value } from '@sinclair/typebox/value'
  */
 export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
   const eventType = 'claim'
-  const activeDeals = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
-  assert(activeDeals !== undefined, `No ${eventType} events found in block ${blockHeight}`)
-  console.log(`Observed ${activeDeals.length} ${eventType} events in block ${blockHeight}`)
-  await storeActiveDeals(activeDeals, pgPool)
+  const blockEvents = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
+  console.log(`Observed ${blockEvents.length} ${eventType} events in block ${blockHeight}`)
+  await storeActiveDeals(blockEvents.map((event) => convertBlockEventToActiveDealDbEntry(event)), pgPool)
 }
 
 /**
@@ -42,26 +40,14 @@ export async function countStoredActiveDeals (pgPool) {
 }
 
 /**
- * @param {Static<typeof BlockEvent>[]} activeDeals
+ * @param {Static<typeof ActiveDealDbEntry >[]} activeDeals
  * @param {Queryable} pgPool
  * @returns {Promise<void>}
  * */
 export async function storeActiveDeals (activeDeals, pgPool) {
-  const transformedDeals = activeDeals.map((deal) => (
-    {
-      activated_at_epoch: deal.height,
-      miner_id: deal.event.provider,
-      client_id: deal.event.client,
-      piece_cid: deal.event.pieceCid,
-      piece_size: deal.event.pieceSize,
-      term_start_epoch: deal.event.termStart,
-      term_min: deal.event.termMin,
-      term_max: deal.event.termMax,
-      sector_id: deal.event.sector,
-      payload_cid: null
-    }))
-
-  const startInserting = Date.now()
+  if (activeDeals.length === 0) {
+    return
+  }
   try {
     // Insert deals in a batch
     const insertQuery = `
@@ -89,34 +75,36 @@ export async function storeActiveDeals (activeDeals, pgPool) {
         )
       `
     await pgPool.query(insertQuery, [
-      transformedDeals.map(deal => deal.activated_at_epoch),
-      transformedDeals.map(deal => deal.miner_id),
-      transformedDeals.map(deal => deal.client_id),
-      transformedDeals.map(deal => deal.piece_cid),
-      transformedDeals.map(deal => deal.piece_size),
-      transformedDeals.map(deal => deal.term_start_epoch),
-      transformedDeals.map(deal => deal.term_min),
-      transformedDeals.map(deal => deal.term_max),
-      transformedDeals.map(deal => deal.sector_id)
+      activeDeals.map(deal => deal.activated_at_epoch),
+      activeDeals.map(deal => deal.miner_id),
+      activeDeals.map(deal => deal.client_id),
+      activeDeals.map(deal => deal.piece_cid),
+      activeDeals.map(deal => deal.piece_size),
+      activeDeals.map(deal => deal.term_start_epoch),
+      activeDeals.map(deal => deal.term_min),
+      activeDeals.map(deal => deal.term_max),
+      activeDeals.map(deal => deal.sector_id)
     ])
-
-    // Commit the transaction if all inserts are successful
-    console.log(`Inserting ${activeDeals.length} deals took ${Date.now() - startInserting}ms`)
   } catch (error) {
     // If any error occurs, roll back the transaction
-    // TODO: Add sentry entry for this error
-    // https://github.com/filecoin-station/deal-observer/issues/28
-    console.error('Error inserting deals:', error.message)
+    throw Error('Error inserting deals', { cause: error })
   }
 }
 
 /**
- * @param {Queryable} pgPool
- * @param {string} query
- * @returns {Promise<Array<Static<typeof ActiveDealDbEntry>>>}
- */
-async function loadDeals (pgPool, query) {
-  const result = (await pgPool.query(query)).rows.map(deal => {
+   * @param {Queryable} pgPool
+   * @param {string} query
+   * @param {Array} args
+   * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
+   */
+export async function loadDeals (pgPool, query, args = []) {
+  const result = (await pgPool.query(query, args)).rows.map(deal => {
+    // SQL used null, typebox needs undefined for null values
+    Object.keys(deal).forEach(key => {
+      if (deal[key] === null) {
+        deal[key] = undefined
+      }
+    })
     return Value.Parse(ActiveDealDbEntry, deal)
   }
   )

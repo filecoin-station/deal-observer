@@ -8,7 +8,9 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
+import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -23,8 +25,7 @@ if (!INFLUXDB_TOKEN) {
 assert(SPARK_API_BASE_URL, 'SPARK_API_BASE_URL required')
 assert(SPARK_API_TOKEN, 'SPARK_API_TOKEN required')
 
-const OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL = 10 * 1000
-const SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL = 10 * 1000
+const LOOP_INTERVAL = 10 * 1000
 
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
@@ -69,12 +70,12 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 
     if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL)
+        point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
     }
-    if (dt < OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL) {
-      await timers.setTimeout(OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL - dt)
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
     }
   }
 }
@@ -108,20 +109,49 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 
     if (INFLUXDB_TOKEN) {
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
-        point.intField('interval_ms', SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL)
+        point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
       recordTelemetry('submitted_deals_stats', point => {
         point.intField('submitted_deals', numberOfSubmittedDeals)
       })
     }
-    if (dt < OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL) {
-      await timers.setTimeout(SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL - dt)
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
+    }
+  }
+}
+
+export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
+  const LOOP_NAME = 'Piece Indexer'
+  while (true) {
+    const start = Date.now()
+    // Maximum number of deals to index in one loop iteration
+    const maxDeals = 1000
+    try {
+      indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+    } catch (e) {
+      console.error(e)
+      Sentry.captureException(e)
+    }
+    const dt = Date.now() - start
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+
+    // For local monitoring and debugging, we can omit sending data to InfluxDB
+    if (INFLUXDB_TOKEN) {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+        point.intField('interval_ms', LOOP_INTERVAL)
+        point.intField('duration_ms', dt)
+      })
+    }
+    if (dt < LOOP_INTERVAL) {
+      await timers.setTimeout(LOOP_INTERVAL - dt)
     }
   }
 }
 
 await Promise.all([
+  pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,

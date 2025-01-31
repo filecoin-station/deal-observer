@@ -3,6 +3,7 @@ import { base64pad } from 'multiformats/bases/base64'
 import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
+import * as util from 'node:util'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone } from './data-types.js'
 import pRetry from 'p-retry'
 /** @import { Static } from '@sinclair/typebox' */
@@ -32,12 +33,10 @@ export const rpcRequest = async (method, params) => {
       const parsedRpcResponse = Value.Parse(RpcRespone, json).result
       return parsedRpcResponse
     } catch (error) {
-      error.message = `Failed to parse RPC response: ${error.message}. Json Response: ${JSON.stringify(json)}`
-      throw error
+      throw Error(util.format('Failed to parse RPC response: %o', json), { cause: error })
     }
   } catch (error) {
-    error.message = `Failed to make RPC request ${method}: ${error.message}\nRequest was: ${JSON.stringify(reqBody)}.`
-    throw error
+    throw Error(`Failed to make RPC request ${method}\nRequest was: ${JSON.stringify(reqBody)}.`, { cause: error })
   }
 }
 /**
@@ -48,7 +47,7 @@ export const rpcRequest = async (method, params) => {
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
   const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
   if (!rawEvents || rawEvents.length === 0) {
-    console.log(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
+    console.debug(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
   }
   // TODO: handle reverted events
@@ -73,8 +72,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
         continue
       }
       default: {
-        console.error(`Unknown event type: ${eventType}`)
-        break
+        throw Error(`Unknown event type: ${eventType}`)
       }
     }
   }
@@ -87,6 +85,24 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
  */
 export async function getChainHead (makeRpcRequest) {
   return await makeRpcRequest('Filecoin.ChainHead', [])
+}
+
+/**
+ * @param {number} minerId
+ * @param {function} makeRpcRequest
+ * @returns {Promise<string>}
+ */
+export async function getMinerPeerId (minerId, makeRpcRequest) {
+  try {
+    const params = getMinerInfoCallParams(minerId)
+    const res = await makeRpcRequest('Filecoin.StateMinerInfo', params)
+    if (!res || !res.PeerId) {
+      throw Error(`Failed to get peer ID for miner ${minerId}, result: ${res}`)
+    }
+    return res.PeerId
+  } catch (err) {
+    throw Error(`Failed to get peer ID for miner ${minerId}.`, { cause: err })
+  }
 }
 
 /**
@@ -104,4 +120,14 @@ export function getActorEventsFilter (blockHeight, eventTypeString) {
         [{ Codec: 81, Value: base64pad.baseEncode(cborEncode(eventTypeString)) }]
     }
   }
+}
+
+/**
+ * @param {number} minerId
+ */
+export function getMinerInfoCallParams (minerId) {
+  return [
+    'f0' + minerId.toString(),
+    null
+  ]
 }

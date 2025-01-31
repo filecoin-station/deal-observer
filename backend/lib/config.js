@@ -1,5 +1,6 @@
 const {
   RPC_URLS = 'https://api.node.glif.io/rpc/v0',
+  PIECE_INDEXER_URL = 'https://pix.filspark.com',
   GLIF_TOKEN
 } = process.env
 
@@ -15,5 +16,6 @@ if (RPC_URL.includes('glif') && GLIF_TOKEN) {
 
 export {
   RPC_URL,
-  rpcHeaders
+  rpcHeaders,
+  PIECE_INDEXER_URL
 }

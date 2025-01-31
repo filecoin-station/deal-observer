@@ -8,7 +8,8 @@ const ActiveDealDbEntry = Type.Object({
   term_start_epoch: Type.Number(),
   term_min: Type.Number(),
   term_max: Type.Number(),
-  sector_id: Type.BigInt()
+  sector_id: Type.BigInt(),
+  payload_cid: Type.Optional(Type.String())
 })
 
 export { ActiveDealDbEntry }
