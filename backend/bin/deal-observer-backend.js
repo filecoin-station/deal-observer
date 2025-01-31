@@ -35,7 +35,6 @@ const maxPastEpochs = 1999
 assert(finalityEpochs <= maxPastEpochs)
 
 const pgPool = await createPgPool()
-const queryLimit = 1000
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
@@ -127,6 +126,7 @@ export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) =
   const LOOP_NAME = 'Piece Indexer'
   while (true) {
     const start = Date.now()
+    const queryLimit = 1000
     try {
       indexPieces(makeRpcRequest, makePixRequest, pgPool, queryLimit)
     } catch (e) {
