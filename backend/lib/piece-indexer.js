@@ -1,6 +1,5 @@
 import { fetchPayloadCid } from './pix-service/service.js'
 import { loadDeals } from './deal-observer.js'
-import assert from 'node:assert'
 import * as util from 'node:util'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
