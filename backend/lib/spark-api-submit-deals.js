@@ -134,9 +134,11 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
   })
 
   if (!response.ok) {
-    throw new Error(
-      `Failed to submit deals (status ${response.status}): ${await response.text().catch(() => null)}`
-    )
+    let msg = `Failed to submit deals (status ${response.status}): ${await response.text().catch(() => null)}`
+    if (response.status === 400) {
+      msg += `\ndeals[0]: ${JSON.stringify(deals[0])}`
+    }
+    throw new Error(msg)
   }
 
   const result = /** @type {{ingested: number; skipped: number}} */ (await response.json())
