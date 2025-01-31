@@ -74,7 +74,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 }
 
 /**
- * Periodically fetches unsubmitted deals from the database and submits them to the Spark API.
+ * Periodically fetches unsubmitted deals from the database and submits them to Spark API.
  *
  * @param {PgPool} pgPool
  * @param {object} args
