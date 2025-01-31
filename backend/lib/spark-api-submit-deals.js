@@ -10,15 +10,12 @@ import Cursor from 'pg-cursor'
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
   console.debug(`Finding and submitting deals using batchSize: ${batchSize}`)
-  for await (const unsubmittedDeals of findUnsubmittedDeals(pgPool, batchSize)) {
-    console.debug(`Found ${unsubmittedDeals.length} unsubmitted deals`)
+  for await (const deals of findUnsubmittedDeals(pgPool, batchSize)) {
+    console.debug(`Found ${deals.length} unsubmitted deals`)
     try {
-      const formattedDeals = unsubmittedDeals.map(deal => {
-        return formatDealForSparkApi(deal)
-      })
-      await submitDeals(formattedDeals)
-      console.debug(`Successfully submitted ${formattedDeals.length} deals`)
-      await markDealsAsSubmitted(pgPool, unsubmittedDeals)
+      await submitDeals(deals)
+      console.debug(`Successfully submitted ${deals.length} deals`)
+      await markDealsAsSubmitted(pgPool, deals)
     } catch (e) {
       console.error('Failed to submit deals:', e)
     }
@@ -70,23 +67,6 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
 }
 
 /**
- * Format unsubmitted deals to format expected by spark api.
- *
- * @param {object} deal
- * @returns {object}
-*/
-const formatDealForSparkApi = (deal) => {
-  return {
-    minerId: deal.miner_id,
-    clientId: deal.client_id,
-    pieceCid: deal.piece_cid,
-    pieceSize: deal.piece_size.toString(),
-    payloadCid: deal.payload_cid,
-    expiresAt: deal.expires_at
-  }
-}
-
-/**
  * Mark deals as submitted.
  *
  * @param {Queryable} pgPool
@@ -121,7 +101,14 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
       'Content-Type': 'application/json',
       Authorization: `Bearer ${sparkApiToken}`
     },
-    body: JSON.stringify(deals)
+    body: JSON.stringify(deals.map(deal => ({
+      minerId: deal.miner_id,
+      clientId: deal.client_id,
+      pieceCid: deal.piece_cid,
+      pieceSize: deal.piece_size.toString(),
+      payloadCid: deal.payload_cid,
+      expiresAt: deal.expires_at
+    })))
   })
 
   if (!response.ok) {
