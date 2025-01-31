@@ -124,8 +124,8 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
       Authorization: `Bearer ${sparkApiToken}`
     },
     body: JSON.stringify(deals.map(deal => ({
-      minerId: String(deal.miner_id),
-      clientId: String(deal.client_id),
+      minerId: deal.miner_id,
+      clientId: deal.client_id,
       pieceCid: deal.piece_cid,
       pieceSize: deal.piece_size.toString(),
       payloadCid: deal.payload_cid,
