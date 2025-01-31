@@ -15,24 +15,23 @@ import * as util from 'node:util'
  * @returns {Promise<void>}
  */
 export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, maxDeals) => {
-  const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, maxDeals)
-  if (dealsWithMissingPayloadCid.length === 0) return
-  await updatePayloadCids(pgPool, makeRpcRequest, dealsWithMissingPayloadCid, makePixRequest)
+  for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
+    await updatePayloadCid(pgPool, makeRpcRequest, makePixRequest, deal)
+  }
 }
 
 /**
  * @param {Queryable} pgPool
  * @param {function} makeRpcRequest
- * @param {function} makePixRequest
+ *  @param {function} makePixRequest
+ * @param {Static<typeof ActiveDealDbEntry>} deal
  * @returns {Promise<void>}
  */
-export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, makePixRequest) {
-  for (const deal of activeDeals) {
-    const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, makePixRequest)
-    if (!payloadCid) continue
-    deal.payload_cid = payloadCid
-    await updatePayloadInActiveDeal(pgPool, deal)
-  }
+export async function updatePayloadCid (pgPool, makeRpcRequest, makePixRequest, deal) {
+  const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, makePixRequest)
+  if (!payloadCid) return
+  deal.payload_cid = payloadCid
+  await updatePayloadInActiveDeal(pgPool, deal)
 }
 
 /**
