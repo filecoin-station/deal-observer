@@ -1,4 +1,7 @@
 export const minerPeerIds = new Map([
+  ['f00',
+    { PeerId: '12D3KooWFAcH5f2JW56APsYttGksxsUV8CnVYeg4zFBtp22zyDhz' }
+  ],
   ['f01531188',
     { PeerId: '12D3KooWFAcH5f2JW56APsYttGksxsUV8CnVYeg4zFBtp22zyDhz' }
   ],
