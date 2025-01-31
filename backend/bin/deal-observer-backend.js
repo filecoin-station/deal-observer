@@ -112,7 +112,7 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
         point.intField('duration_ms', dt)
       })
       recordTelemetry('submitted_deals_stats', point => {
-        point.intField('number_of_submitted_deals', numberOfSubmittedDeals)
+        point.intField('submitted_deals', numberOfSubmittedDeals)
       })
     }
     if (dt < OBSERVE_ACTOR_EVENTS_LOOP_INTERVAL) {
