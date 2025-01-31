@@ -74,9 +74,19 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
  */
 const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
-    UPDATE active_deals
+    UPDATE active_deals ad
     SET submitted_at = NOW()
-    WHERE miner_id = ANY($1) AND client_id = ANY($2) AND piece_cid = ANY($3) AND piece_size = ANY($4)
+    FROM (
+      SELECT
+        unnest($1::INT[]) AS miner_id,
+        unnest($2::INT[]) AS client_id,
+        unnest($3::TEXT[]) AS piece_cid,
+        unnest($4::BIGINT[]) AS piece_size
+    ) AS t
+    WHERE ad.miner_id = t.miner_id 
+      AND ad.client_id = t.client_id 
+      AND ad.piece_cid = t.piece_cid 
+      AND ad.piece_size = t.piece_size
   `, [
     eligibleDeals.map(deal => deal.miner_id),
     eligibleDeals.map(deal => deal.client_id),
