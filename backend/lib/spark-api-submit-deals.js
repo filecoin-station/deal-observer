@@ -145,7 +145,5 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
     throw new Error(msg)
   }
 
-  const result = /** @type {{ingested: number; skipped: number}} */ (await response.json())
-  console.debug(`Successfully submitted ${result.ingested} deals, skipped ${result.skipped} deals`)
-  return result
+  return /** @type {{ingested: number; skipped: number}} */ (await response.json())
 }
