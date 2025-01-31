@@ -6,7 +6,6 @@ import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
 import { lock } from './utils.js'
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -82,8 +81,9 @@ describe('deal-observer-backend', () => {
 
   it('check number of stored deals', async () => {
     const storeBlockEvent = async (eventData) => {
-      const event = Value.Parse(ActiveDealDbEntry, { height: 1, event: eventData, emitter: 'f06' })
-      await storeActiveDeals([event], pgPool)
+      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+      const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+      await storeActiveDeals([dbEntry], pgPool)
     }
     const data = {
       id: 1,
