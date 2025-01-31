@@ -38,7 +38,7 @@ const DEAL_OBSERVER_LOOP_NAME = 'Built-in actor events'
 const DEAL_SUBMITTER_LOOP_NAME = 'Deal submission'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
-const dealObserverLoop = async (makeRpcRequest, pgPool) => {
+const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
@@ -111,7 +111,7 @@ const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToke
 }
 
 await Promise.all([
-  dealObserverLoop(rpcRequest, pgPool),
+  observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiDealSubmitterLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
     sparkApiToken: SPARK_API_TOKEN,
