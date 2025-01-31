@@ -14,7 +14,7 @@ const {
   INFLUXDB_TOKEN,
   SPARK_API_BASE_URL,
   SPARK_API_TOKEN,
-  DEAL_SUBMITTER_BATCH_SIZE = 100
+  SPARK_API_SUBMIT_DEALS_BATCH_SIZE = 100
 } = process.env
 
 if (!INFLUXDB_TOKEN) {
@@ -83,14 +83,14 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
  * @param {object} args
  * @param {string} args.sparkApiBaseUrl
  * @param {string} args.sparkApiToken
- * @param {number} args.dealSubmitterBatchSize
+ * @param {number} args.sparkApiSubmitDealsBatchSize
  */
-const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, dealSubmitterBatchSize }) => {
+const sparkApiDealSubmitterLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
   const submitDeals = submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken)
   while (true) {
     const start = Date.now()
     try {
-      await findAndSubmitUnsubmittedDeals(pgPool, dealSubmitterBatchSize, submitDeals)
+      await findAndSubmitUnsubmittedDeals(pgPool, sparkApiSubmitDealsBatchSize, submitDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -115,6 +115,6 @@ await Promise.all([
   sparkApiDealSubmitterLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
     sparkApiToken: SPARK_API_TOKEN,
-    dealSubmitterBatchSize: Number(DEAL_SUBMITTER_BATCH_SIZE)
+    sparkApiSubmitDealsBatchSize: Number(SPARK_API_SUBMIT_DEALS_BATCH_SIZE)
   })
 ])
