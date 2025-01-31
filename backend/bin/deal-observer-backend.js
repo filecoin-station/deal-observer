@@ -7,7 +7,7 @@ import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
-import { fetchDealWithHighestActivatedEpoch, fetchNumberOfStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 
 const { INFLUXDB_TOKEN } = process.env
 if (!INFLUXDB_TOKEN) {
@@ -45,7 +45,7 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
         await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
       }
       const newLastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const numberOfStoredDeals = await fetchNumberOfStoredActiveDeals(pgPool)
+      const numberOfStoredDeals = await countStoredActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
           point.intField('last_searched_epoch', newLastInsertedDeal.activated_at_epoch)

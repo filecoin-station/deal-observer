@@ -1,7 +1,7 @@
 import assert from 'node:assert'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { fetchDealWithHighestActivatedEpoch, fetchNumberOfStoredActiveDeals, storeActiveDeals } from '../lib/deal-observer.js'
+import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
@@ -90,13 +90,13 @@ describe('deal-observer-backend', () => {
       termMax: 12340,
       sector: 6n
     }
-    assert.strictEqual(await fetchNumberOfStoredActiveDeals(pgPool), 0n)
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 0n)
     await storeBlockEvent(data)
-    assert.strictEqual(await fetchNumberOfStoredActiveDeals(pgPool), 1n)
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 1n)
     // Entries must be unique
     data.id = 2
     data.provider = 3
     await storeBlockEvent(data)
-    assert.strictEqual(await fetchNumberOfStoredActiveDeals(pgPool), 2n)
+    assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
   })
 })
