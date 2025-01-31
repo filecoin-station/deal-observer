@@ -16,9 +16,8 @@ import * as util from 'node:util'
  */
 export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, maxDeals) => {
   const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, maxDeals)
-  if (dealsWithMissingPayloadCid !== null && dealsWithMissingPayloadCid) {
-    await updatePayloadCids(pgPool, makeRpcRequest, dealsWithMissingPayloadCid, makePixRequest)
-  }
+  if (dealsWithMissingPayloadCid.length === 0) return
+  await updatePayloadCids(pgPool, makeRpcRequest, dealsWithMissingPayloadCid, makePixRequest)
 }
 
 /**
