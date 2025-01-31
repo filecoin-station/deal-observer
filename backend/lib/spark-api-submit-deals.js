@@ -56,11 +56,10 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
         AND epoch_to_timestamp(term_start_epoch + term_min) > NOW()`
   ))
 
-  let rows = await cursor.read(batchSize)
-  while (rows.length > 0) {
+  while (true) {
+    const rows = await cursor.read(batchSize)
+    if (rows.length === 0) break
     yield rows
-
-    rows = await cursor.read(batchSize)
   }
 
   client.release()
