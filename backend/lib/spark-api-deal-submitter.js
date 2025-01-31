@@ -109,7 +109,7 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  * @param {string} sparkApiBaseURL
  * @param {string} sparkApiToken
  * @param {Array} deals
- * @returns {Promise<void>} 
+ * @returns {Promise<void>}
  */
 export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deals) => {
   console.debug(`Submitting ${deals.length} deals to Spark API`)
