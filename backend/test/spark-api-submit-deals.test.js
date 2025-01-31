@@ -47,7 +47,21 @@ describe('Submit deals to spark-api', () => {
     await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(rows.length, 2)
-    assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 2)
+    assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
+  })
+
+  it('finds and submits deals in two batches to the spark api - first batch fails', async () => {
+    const batchSize = 1
+    const mockSubmitEligibleDeals = mock.fn()
+
+    // mock the first call to submit deals to fail
+    mockSubmitEligibleDeals.mock.mockImplementationOnce(() => { throw new Error('submit failed') })
+
+    // two deals are eligible for submission, batchSize is 1
+    await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
+    assert.strictEqual(rows.length, 1)
+    assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
   })
 })
 
