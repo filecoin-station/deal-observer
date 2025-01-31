@@ -25,21 +25,19 @@ assert(SPARK_API_TOKEN, 'SPARK_API_TOKEN required')
 
 const OBSERVE_DEALS_LOOP_INTERVAL = 10 * 1000
 const SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL = 10 * 1000
+
 // Filecoin will need some epochs to reach finality.
 // We do not want to fetch deals that are newer than the current chain head - 940 epochs.
 const finalityEpochs = 940
 // The free tier of the glif rpc endpoint only allows us to go back 2000 blocks.
 const maxPastEpochs = 1999
-
 assert(finalityEpochs <= maxPastEpochs)
 
 const pgPool = await createPgPool()
-
-const OBSERVE_DEALS_LOOP_NAME = 'Built-in actor events'
-const SPARK_API_SUBMIT_DEALS_LOOP_NAME = 'Submit deals to spark-api'
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
+  const LOOP_NAME = 'Observe actor events'
   while (true) {
     const start = Date.now()
     try {
@@ -59,10 +57,10 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${OBSERVE_DEALS_LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(OBSERVE_DEALS_LOOP_NAME, '_')}`, point => {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', OBSERVE_DEALS_LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -83,6 +81,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
  * @param {number} args.sparkApiSubmitDealsBatchSize
  */
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
+  const LOOP_NAME = 'Submit deals to spark-api'
   while (true) {
     const start = Date.now()
     try {
@@ -96,10 +95,10 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${SPARK_API_SUBMIT_DEALS_LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(SPARK_API_SUBMIT_DEALS_LOOP_NAME, '_')}`, point => {
+      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', SPARK_API_SUBMIT_DEALS_LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
