@@ -126,9 +126,10 @@ export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) =
   const LOOP_NAME = 'Piece Indexer'
   while (true) {
     const start = Date.now()
-    const queryLimit = 1000
+    // Maximum number of deals to index in one loop iteration
+    const maxDeals = 1000
     try {
-      indexPieces(makeRpcRequest, makePixRequest, pgPool, queryLimit)
+      indexPieces(makeRpcRequest, makePixRequest, pgPool, maxDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)

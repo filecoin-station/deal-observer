@@ -27,11 +27,11 @@ export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, ma
  * @param {function} makeRpcRequest
  * @param {function} makePixRequest
  * @param {Queryable} pgPool
- * @param {number} queryLimit
+ * @param {number} maxDeals
  * @returns {Promise<void>}
  */
-export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, queryLimit) => {
-  const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, queryLimit)
+export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, maxDeals) => {
+  const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, maxDeals)
   if (dealsWithMissingPayloadCid !== null && dealsWithMissingPayloadCid) {
     await updatePayloadCids(pgPool, makeRpcRequest, dealsWithMissingPayloadCid, makePixRequest)
   }
@@ -39,11 +39,11 @@ export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, queryL
 
 /**
    * @param {Queryable} pgPool
-   * @param {number} limit
+   * @param {number} maxDeals
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
-export async function fetchDealsWithNoPayloadCid (pgPool, limit) {
-  const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${limit}`
+export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
+  const query = `SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT ${maxDeals}`
   return await loadDeals(pgPool, query)
 }
 
