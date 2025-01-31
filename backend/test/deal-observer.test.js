@@ -1,10 +1,11 @@
 import assert from 'node:assert'
-import { after, before, beforeEach, describe, it } from 'node:test'
+import { after, before, beforeEach, describe, it, afterEach } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { fetchDealWithHighestActivatedEpoch, parseDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
+import { lock } from './utils.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -17,7 +18,12 @@ describe('deal-observer-backend', () => {
     await pgPool.end()
   })
 
+  afterEach(async () => {
+    await lock.unlock()
+  })
+
   beforeEach(async () => {
+    await lock.writeLock()
     await pgPool.query('DELETE FROM active_deals')
   })
 

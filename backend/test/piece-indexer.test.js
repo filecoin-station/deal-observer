@@ -1,5 +1,5 @@
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
-import { before, beforeEach, it, describe, after } from 'node:test'
+import { before, beforeEach, it, describe, after, afterEach } from 'node:test'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { parse } from '@ipld/dag-json'
@@ -8,6 +8,7 @@ import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
 import { indexPieces } from '../lib/piece-indexer.js'
+import { lock } from './utils.js'
 
 describe('deal-observer-backend piece indexer', () => {
   const makeRpcRequest = async (method, params) => {
@@ -39,7 +40,12 @@ describe('deal-observer-backend piece indexer', () => {
     await pgPool.end()
   })
 
+  afterEach(async () => {
+    await lock.unlock()
+  })
+
   beforeEach(async () => {
+    await lock.writeLock()
     await pgPool.query('DELETE FROM active_deals')
     for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {
       await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
