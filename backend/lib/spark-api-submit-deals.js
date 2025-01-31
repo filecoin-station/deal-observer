@@ -8,8 +8,10 @@ import * as Sentry from '@sentry/node'
  * @param {PgPool} pgPool
  * @param {number} batchSize
  * @param {(eligibleDeals: Array) => Promise<void>} submitDeals
+ * @returns {Promise<number>} Number of deals submitted
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
+  let numberOfSubmittedDeals = 0
   console.debug(`Finding and submitting deals using batchSize: ${batchSize}`)
   for await (const deals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${deals.length} unsubmitted deals`)
@@ -17,11 +19,14 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
       await submitDeals(deals)
       console.debug(`Successfully submitted ${deals.length} deals`)
       await markDealsAsSubmitted(pgPool, deals)
+      numberOfSubmittedDeals += deals.length
     } catch (e) {
       console.error('Failed to submit deals:', e)
       Sentry.captureException(e)
     }
   }
+
+  return numberOfSubmittedDeals
 }
 
 /**
