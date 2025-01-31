@@ -23,7 +23,7 @@ export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcReq
 
 /**
  * @param {Queryable} pgPool
- * @returns {Promise<ActiveDealDbEntry | null>}
+ * @returns {Promise<Static<typeof ActiveDealDbEntry> | null>}
  */
 export async function fetchDealWithHighestActivatedEpoch (pgPool) {
   const query = 'SELECT * FROM active_deals ORDER BY activated_at_epoch DESC LIMIT 1'
@@ -103,7 +103,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 /**
  * @param {Queryable} pgPool
  * @param {string} query
- * @returns {Promise<Array<ActiveDealDbEntry>>}
+ * @returns {Promise<Array<Static<typeof ActiveDealDbEntry>>>}
  */
 async function loadDeals (pgPool, query) {
   const result = (await pgPool.query(query)).rows.map(deal => {
