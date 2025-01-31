@@ -5,7 +5,6 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, 
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
-import { lock } from './utils.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
@@ -18,12 +17,7 @@ describe('deal-observer-backend', () => {
     await pgPool.end()
   })
 
-  afterEach(async () => {
-    await lock.unlock()
-  })
-
   beforeEach(async () => {
-    await lock.writeLock()
     await pgPool.query('DELETE FROM active_deals')
   })
 

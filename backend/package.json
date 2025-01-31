@@ -6,7 +6,7 @@
     "migrate": "node ../db/bin/migrate.js",
     "start": "node bin/deal-observer-backend.js",
     "lint": "standard",
-    "test": "node --test --test-reporter=spec"
+    "test": "node --test --test-reporter=spec --test-concurrency=0"
   },
   "devDependencies": {
     "async-rwlock": "^1.1.1",

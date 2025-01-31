@@ -8,7 +8,6 @@ import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
 import { indexPieces } from '../lib/piece-indexer.js'
-import { lock } from './utils.js'
 
 describe('deal-observer-backend piece indexer', () => {
   const makeRpcRequest = async (method, params) => {
@@ -40,12 +39,7 @@ describe('deal-observer-backend piece indexer', () => {
     await pgPool.end()
   })
 
-  afterEach(async () => {
-    await lock.unlock()
-  })
-
   beforeEach(async () => {
-    await lock.writeLock()
     await pgPool.query('DELETE FROM active_deals')
     for (let blockHeight = 4622129; blockHeight < 4622129 + 11; blockHeight++) {
       await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
