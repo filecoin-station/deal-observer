@@ -36,8 +36,8 @@ export const getDealPayloadCid = async (providerId, pieceCid) => {
 * @param {string} pieceCid
 * @returns {Promise<string>}
 */
-export async function fetchPayloadCid (providerId, pieceCid, rpcRequest, pixRequest) {
-  const minerPeerId = await getMinerPeerId(providerId, rpcRequest)
-  const payloadCid = await pixRequest(minerPeerId, pieceCid)
+export async function fetchPayloadCid (providerId, pieceCid, makeRpcRequest, makePixRequest) {
+  const minerPeerId = await getMinerPeerId(providerId, makeRpcRequest)
+  const payloadCid = await makePixRequest(minerPeerId, pieceCid)
   return payloadCid
 }

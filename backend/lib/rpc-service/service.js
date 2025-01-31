@@ -89,13 +89,13 @@ export async function getChainHead (makeRpcRequest) {
 
 /**
  * @param {number} minerId
- * @param {function} rpcRequestFn
+ * @param {function} makeRpcRequest
  * @returns {Promise<string>}
  */
-export async function getMinerPeerId (minerId, rpcRequestFn) {
+export async function getMinerPeerId (minerId, makeRpcRequest) {
   try {
     const params = getMinerInfoCallParams(minerId)
-    const res = await rpcRequestFn('Filecoin.StateMinerInfo', params)
+    const res = await makeRpcRequest('Filecoin.StateMinerInfo', params)
     if (!res || !res.PeerId) {
       throw Error(`Failed to get peer ID for miner ${minerId}, result: ${res}`)
     }

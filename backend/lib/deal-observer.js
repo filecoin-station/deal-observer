@@ -41,42 +41,29 @@ export async function storeActiveDeals (activeDeals, pgPool) {
   try {
     // Insert deals in a batch
     const insertQuery = `
-          INSERT INTO active_deals (
-            activated_at_epoch,
-            miner_id,
-            client_id,
-            piece_cid,
-            piece_size,
-            term_start_epoch,
-            term_min,
-            term_max,
-            sector_id,
-            payload_cid
-          )
-          VALUES (
-            unnest($1::int[]),
-            unnest($2::int[]), 
-            unnest($3::int[]), 
-            unnest($4::text[]), 
-            unnest($5::bigint[]), 
-            unnest($6::int[]), 
-            unnest($7::int[]), 
-            unnest($8::int[]), 
-            unnest($9::bigint[]),
-            unnest($10::text[])
-          )
-          ON CONFLICT (
-            activated_at_epoch,
-            miner_id,
-            client_id,
-            piece_cid,
-            piece_size,
-            term_start_epoch,
-            term_min,
-            term_max,
-            sector_id) DO UPDATE SET
-          payload_cid = EXCLUDED.payload_cid
-        `
+        INSERT INTO active_deals (
+          activated_at_epoch,
+          miner_id,
+          client_id,
+          piece_cid,
+          piece_size,
+          term_start_epoch,
+          term_min,
+          term_max,
+          sector_id
+        )
+        VALUES (
+          unnest($1::int[]),
+          unnest($2::int[]), 
+          unnest($3::int[]), 
+          unnest($4::text[]), 
+          unnest($5::bigint[]), 
+          unnest($6::int[]), 
+          unnest($7::int[]), 
+          unnest($8::int[]), 
+          unnest($9::bigint[])
+        )
+      `
     await pgPool.query(insertQuery, [
       activeDeals.map(deal => deal.activated_at_epoch),
       activeDeals.map(deal => deal.miner_id),
@@ -86,8 +73,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.term_start_epoch),
       activeDeals.map(deal => deal.term_min),
       activeDeals.map(deal => deal.term_max),
-      activeDeals.map(deal => deal.sector_id),
-      activeDeals.map(deal => deal.payload_cid)
+      activeDeals.map(deal => deal.sector_id)
     ])
   } catch (error) {
     // If any error occurs, roll back the transaction

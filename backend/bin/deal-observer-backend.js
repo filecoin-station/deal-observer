@@ -55,12 +55,12 @@ const dealObserverLoop = async (makeRpcRequest, pgPool) => {
   }
 }
 
-export const pieceIndexerLoop = async (rpcRequest, pixRequest, pgPool) => {
+export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) => {
   const LOOP_NAME = 'Piece Indexer'
   while (true) {
     const start = Date.now()
     try {
-      indexPieces(rpcRequest, pixRequest, pgPool, queryLimit)
+      indexPieces(makeRpcRequest, makePixRequest, pgPool, queryLimit)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
