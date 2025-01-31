@@ -146,7 +146,6 @@ export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) =
 }
 
 await Promise.all([
-  // TODO: Define `pixRequest`
   pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
