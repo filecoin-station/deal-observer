@@ -16,6 +16,7 @@ import * as util from 'node:util'
 export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, makePixRequest) {
   for (const deal of activeDeals) {
     const payloadCid = await fetchPayloadCid(deal.miner_id, deal.piece_cid, makeRpcRequest, makePixRequest)
+    if (!payloadCid) continue
     deal.payload_cid = payloadCid
     await updatePayloadInActiveDeal(pgPool, deal)
   }
@@ -30,7 +31,6 @@ export async function updatePayloadCids (pgPool, makeRpcRequest, activeDeals, ma
  * @returns {Promise<void>}
  */
 export const indexPieces = async (makeRpcRequest, makePixRequest, pgPool, queryLimit) => {
-  // TODO: handle payloads which cannot be retrieved from the piece CID indexer
   const dealsWithMissingPayloadCid = await fetchDealsWithNoPayloadCid(pgPool, queryLimit)
   if (dealsWithMissingPayloadCid !== null && dealsWithMissingPayloadCid) {
     await updatePayloadCids(pgPool, makeRpcRequest, dealsWithMissingPayloadCid, makePixRequest)

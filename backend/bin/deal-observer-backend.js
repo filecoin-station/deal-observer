@@ -10,6 +10,7 @@ import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
+import { getDealPayloadCid } from '../lib/pix-service/service.js'
 
 const {
   INFLUXDB_TOKEN,
@@ -146,7 +147,7 @@ export const pieceIndexerLoop = async (makeRpcRequest, makePixRequest, pgPool) =
 
 await Promise.all([
   // TODO: Define `pixRequest`
-  pieceIndexerLoop(rpcRequest, () => {}, pgPool),
+  pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
