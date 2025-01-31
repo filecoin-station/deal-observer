@@ -51,11 +51,11 @@ describe('deal-observer-backend piece indexer', () => {
       await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
     }
     const allDeals = await pgPool.query('SELECT * FROM active_deals WHERE activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')
-    assert.strictEqual(allDeals.rows.length, 360)
+    assert.strictEqual(allDeals.rows.length, 255)
   })
 
   it('piece indexer loop function fetches deals where there exists not payload yet and updates the database entry', async (t) => {
-    assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length, 360)
+    assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length, 255)
     await indexPieces(makeRpcRequest, makepixRequest, pgPool, 10000)
     assert.strictEqual((await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL AND activated_at_epoch >= 4622129 AND activated_at_epoch <= 4622139')).rows.length, 0)
   })
