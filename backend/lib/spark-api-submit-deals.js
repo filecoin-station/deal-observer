@@ -12,7 +12,6 @@ import * as Sentry from '@sentry/node'
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
   let numberOfSubmittedDeals = 0
-  console.debug(`Finding and submitting deals using batchSize: ${batchSize}`)
   for await (const deals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${deals.length} unsubmitted deals`)
     try {
