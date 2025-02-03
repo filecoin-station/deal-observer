@@ -125,7 +125,7 @@ describe('deal-observer-backend piece indexer', () => {
     // After fetching the payload, the cache should be updated with the new retries left and last retry time
     assert.deepEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), { retriesLeft: 1, lastRetry: now })
 
-    // If we try again and there is only one retry left, the cache should delete the payload entry and deal should be marked to have an unretrievable paylod
+    // If we try again and there is only one retry left, the cache should delete the payload entry and the deal should be marked to have an unretrievable payload
     cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
     await checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
     assert.strictEqual(payloadsCalled, 2)
@@ -133,7 +133,7 @@ describe('deal-observer-backend piece indexer', () => {
     assert.strictEqual(deal.payload_unretrievable, true)
     assert.strictEqual(deal.payload_cid, null)
 
-    // If we set the payload to be retrievable the entry should be marked to not be unretrievable and it should be remove from the cache
+    // If we set the payload to be retrievable the entry should be marked to not be unretrievable and it should be removed from the cache
     cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 2, lastRetry: now - 9 * 60 * 60 * 1000 })
     returnPayload = true
     await checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
@@ -171,19 +171,24 @@ describe('deal-observer-backend piece indexer', () => {
       payload_cid: undefined,
       payload_unretrievable: undefined
     })
+    // We start with a clean table an insert a single deal with no payload
     await pgPool.query('DELETE FROM active_deals')
     await storeActiveDeals([deal], pgPool)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
+    // The payload is unretrievable on the first try and should be stored in the cache
     await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, cache, now)
     assert.strictEqual(payloadsCalled, 1)
     assert.deepStrictEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), { retriesLeft: 4, lastRetry: now })
 
+    // If the last retry is more than 9 hours ago we should retry and if it is the last retry the entry should be removed from the cache and marked as unretrievable
     cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
     await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, cache, now)
     assert.strictEqual(payloadsCalled, 2)
     deal.payload_unretrievable = true
+    // The deal should be marked as unretrievable and reflected in the database
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals WHERE payload_unretrievable = TRUE'))[0], deal)
 
+    // Payloads that can be retrieved on some retries should be marked as not unretrievable and the cache should remove the entry
     await pgPool.query('DELETE FROM active_deals')
     await storeActiveDeals([deal], pgPool)
     cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
