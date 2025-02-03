@@ -93,14 +93,21 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
   const LOOP_NAME = 'Submit deals to spark-api'
   while (true) {
-    let numberOfSubmittedDeals = 0
     const start = Date.now()
     try {
-      numberOfSubmittedDeals = await findAndSubmitUnsubmittedDeals(
+      const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(
         pgPool,
         sparkApiSubmitDealsBatchSize,
         deals => submitDealsToSparkApi(sparkApiBaseUrl, sparkApiToken, deals)
       )
+
+      if (INFLUXDB_TOKEN) {
+        recordTelemetry('submitted_deals_stats', point => {
+          point.intField('submitted_deals', submitted)
+          point.intField('ingested_deals', ingested)
+          point.intField('skipped_deals', skipped)
+        })
+      }
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -112,9 +119,6 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
       recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
-      })
-      recordTelemetry('submitted_deals_stats', point => {
-        point.intField('submitted_deals', numberOfSubmittedDeals)
       })
     }
     if (dt < LOOP_INTERVAL) {
