@@ -33,10 +33,11 @@ describe('Submit deals to spark-api', () => {
     const batchSize = 10
     const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
-    const { submitted, ingested } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 2)
     assert.strictEqual(ingested, 2)
+    assert.strictEqual(skipped, 0)
     assert.strictEqual(rows.length, 2)
     assert.strictEqual(mockSubmitEligibleDeals.mock.calls.length, 1)
   })
@@ -46,10 +47,11 @@ describe('Submit deals to spark-api', () => {
     const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
     // two deals are eligible for submission, batchSize is 1
-    const { submitted, ingested } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 2)
     assert.strictEqual(ingested, 2)
+    assert.strictEqual(skipped, 0)
     assert.strictEqual(rows.length, 2)
     assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
   })
@@ -62,11 +64,29 @@ describe('Submit deals to spark-api', () => {
     mockSubmitEligibleDeals.mock.mockImplementationOnce(() => { throw new Error('submit failed') })
 
     // two deals are eligible for submission, batchSize is 1
-    const { submitted, ingested } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 1)
     assert.strictEqual(ingested, 1)
+    assert.strictEqual(skipped, 0)
     assert.strictEqual(rows.length, 1)
+    assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
+  })
+
+  it('finds and submits deals in two batches to the spark api - first batch skipped', async () => {
+    const batchSize = 1
+    const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
+
+    // mock the first call to submit deals to skip one deal
+    mockSubmitEligibleDeals.mock.mockImplementationOnce(() => { return Promise.resolve({ ingested: 0, skipped: 1 }) })
+
+    // two deals are eligible for submission, batchSize is 1
+    const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
+    assert.strictEqual(submitted, 2)
+    assert.strictEqual(ingested, 1)
+    assert.strictEqual(skipped, 1)
+    assert.strictEqual(rows.length, 2)
     assert.strictEqual(mockSubmitEligibleDeals.mock.callCount(), 2)
   })
 })
