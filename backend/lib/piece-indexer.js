@@ -68,7 +68,7 @@ export async function checkCacheForRetrievablePayloads (minerPeerId, deal, getDe
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
-  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
+  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL AND (payload_unretrievable IS NULL OR  payload_unretrievable = FALSE) ORDER BY activated_at_epoch ASC LIMIT $1'
   return await loadDeals(pgPool, query, [maxDeals])
 }
 
