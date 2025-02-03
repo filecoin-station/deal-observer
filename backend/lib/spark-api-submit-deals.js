@@ -8,25 +8,26 @@ import * as Sentry from '@sentry/node'
  * @param {PgPool} pgPool
  * @param {number} batchSize
  * @param {(eligibleDeals: Array) => Promise<{ingested: number; skipped: number}>} submitDeals
- * @returns {Promise<number>} Number of deals submitted
+ * @returns {Promise<{submitted: number; ingested: number; skipped: number;}>} Number of deals submitted, ingested and skipped
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
-  let numberOfSubmittedDeals = 0
+  const result = { submitted: 0, ingested: 0, skipped: 0 }
   for await (const deals of findUnsubmittedDeals(pgPool, batchSize)) {
     console.debug(`Found ${deals.length} unsubmitted deals`)
     try {
       const { ingested, skipped } = await submitDeals(deals)
       console.log(`Successfully submitted ${deals.length} deals. ${ingested} deals were added, ${skipped} were skipped.`)
-      // TODO: report {deals.length, ingested, skipped} to InfluxDB
       await markDealsAsSubmitted(pgPool, deals)
-      numberOfSubmittedDeals += deals.length
+      result.submitted += deals.length
+      result.ingested += ingested
+      result.skipped += skipped
     } catch (e) {
       console.error('Failed to submit deals:', e)
       Sentry.captureException(e)
     }
   }
 
-  return numberOfSubmittedDeals
+  return result
 }
 
 /**
