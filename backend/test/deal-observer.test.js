@@ -49,7 +49,8 @@ describe('deal-observer-backend', () => {
       term_max: eventData.termMax,
       sector_id: eventData.sector,
       payload_cid: undefined,
-      payload_unretrievable: undefined
+      payload_unretrievable: undefined,
+      last_payload_retrieval: undefined
     }
     assert.deepStrictEqual(actualData, [expectedData])
   })
@@ -65,7 +66,8 @@ describe('deal-observer-backend', () => {
       termMax: 12340,
       sector: 6n,
       payload_cid: undefined,
-      payload_unretrievable: undefined
+      payload_unretrievable: undefined,
+      last_payload_retrieval: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
     const dbEntry = convertBlockEventToActiveDealDbEntry(event)

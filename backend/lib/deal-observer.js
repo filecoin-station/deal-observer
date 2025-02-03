@@ -60,7 +60,9 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_start_epoch,
           term_min,
           term_max,
-          sector_id
+          sector_id,
+          payload_unretrievable,
+          last_payload_retrieval
         )
         VALUES (
           unnest($1::int[]),
@@ -71,7 +73,10 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           unnest($6::int[]), 
           unnest($7::int[]), 
           unnest($8::int[]), 
-          unnest($9::bigint[])
+          unnest($9::bigint[]),
+          unnest($10::boolean[]),
+          unnest($11::bigint[])
+
         )
       `
     await pgPool.query(insertQuery, [
@@ -83,7 +88,9 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.term_start_epoch),
       activeDeals.map(deal => deal.term_min),
       activeDeals.map(deal => deal.term_max),
-      activeDeals.map(deal => deal.sector_id)
+      activeDeals.map(deal => deal.sector_id),
+      activeDeals.map(deal => deal.payload_unretrievable),
+      activeDeals.map(deal => deal.last_payload_retrieval)
     ])
   } catch (error) {
     // If any error occurs, roll back the transaction

@@ -10,7 +10,8 @@ const ActiveDealDbEntry = Type.Object({
   term_max: Type.Number(),
   sector_id: Type.BigInt(),
   payload_cid: Type.Optional(Type.String()),
-  payload_unretrievable: Type.Optional(Type.Boolean())
+  payload_unretrievable: Type.Optional(Type.Boolean()),
+  last_payload_retrieval: Type.Optional(Type.BigInt())
 })
 
 export { ActiveDealDbEntry }

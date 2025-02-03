@@ -7,11 +7,9 @@ import { loadDeals, observeBuiltinActorEvents, storeActiveDeals } from '../lib/d
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { checkCacheForRetrievablePayloads, indexPieces } from '../lib/piece-indexer.js'
-import NodeCache from 'node-cache'
-import { getMinerPeerId } from '../lib/rpc-service/service.js'
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { indexPieces } from '../lib/piece-indexer.js'
 import { Value } from '@sinclair/typebox/value'
+import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 describe('deal-observer-backend piece indexer', () => {
   const makeRpcRequest = async (method, params) => {
@@ -50,7 +48,6 @@ describe('deal-observer-backend piece indexer', () => {
 
   it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     const getDealPayloadCidCalls = []
-    const payloadsCache = new NodeCache()
     const getDealPayloadCid = async (providerId, pieceCid) => {
       getDealPayloadCidCalls.push({ providerId, pieceCid })
       const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
@@ -61,142 +58,141 @@ describe('deal-observer-backend piece indexer', () => {
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000, payloadsCache)
+    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
     assert.strictEqual(getDealPayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       85 // Not all deals have a payload CID in the test data
     )
   })
+})
 
-  it('piece indexer checks cache for missing pyloads', async (t) => {
-    const getDealPayloadCidCalls = []
-    const payloadsCache = new NodeCache()
-    const now = Date.now()
-    const getDealPayloadCid = async (providerId, pieceCid) => {
-      getDealPayloadCidCalls.push({ providerId, pieceCid })
-      return payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))?.payloadCid
-    }
+describe('deal-observer-backend piece indexer payload retrieval', () => {
+  let pgPool
+  const payloadCid = 'PAYLOAD_CID'
+  const minerPeerId = 'MINER_PEER_ID'
+  const pieceCid = 'PIECE_CID'
+  const now = Date.now()
+  const fetchMinerId = async () => {
+    return { PeerId: minerPeerId }
+  }
 
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000, payloadsCache, now)
-    const dealsWithNoPayloadCid = await loadDeals(pgPool, 'SELECT * FROM active_deals WHERE payload_cid IS NULL')
-    const numDealsCached = payloadsCache.keys().length
-    assert.strictEqual(dealsWithNoPayloadCid.length, numDealsCached)
-    // Make sure that each one of the deals that has no payload is cached
-    for (const deal of dealsWithNoPayloadCid) {
-      const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
-      assert.deepStrictEqual(payloadsCache.get(JSON.stringify({ minerPeerId, pieceCid: deal.piece_cid })), { retriesLeft: 4, lastRetry: now })
-    }
+  before(async () => {
+    pgPool = await createPgPool()
+    await migrateWithPgClient(pgPool)
   })
 
-  it('piece indexer cache retries fetching payloads correctly', async (t) => {
-    const cache = new NodeCache()
-    const payloadCid = 'PAYLOAD_CID'
-    let returnPayload = false
-    let payloadsCalled = 0
-    const getDealPayloadCid = async () => {
-      payloadsCalled++
-      return returnPayload ? payloadCid : null
-    }
-    const minerPeerId = 'MINER_PEER_ID'
-    const pieceCid = 'PIECE_CID'
-    const now = Date.now()
-    const deal = Value.Parse(ActiveDealDbEntry, {
-      miner_id: 1,
-      piece_cid: pieceCid,
-      client_id: 1,
-      activated_at_epoch: 1,
-      piece_size: 1000,
-      term_start_epoch: 1,
-      term_min: 1,
-      term_max: 1,
-      sector_id: 1,
-      payload_cid: undefined,
-      payload_unretrievable: undefined
-    })
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 2, lastRetry: now })
-    checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
-    // Payloads should not be fetched as the last retry was less than 8 hours ago
-    assert.strictEqual(payloadsCalled, 0)
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 2, lastRetry: now - 9 * 60 * 60 * 1000 })
-    await checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
-    // Payloads should be fetched now as the last retry was more than 8 hours ago
-    assert.strictEqual(payloadsCalled, 1)
-    // After fetching the payload, the cache should be updated with the new retries left and last retry time
-    assert.deepEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), { retriesLeft: 1, lastRetry: now })
-
-    // If we try again and there is only one retry left, the cache should delete the payload entry and the deal should be marked to have an unretrievable payload
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
-    await checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
-    assert.strictEqual(payloadsCalled, 2)
-    assert.strictEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), undefined)
-    assert.strictEqual(deal.payload_unretrievable, true)
-    assert.strictEqual(deal.payload_cid, null)
-
-    // If we set the payload to be retrievable the entry should be marked to not be unretrievable and it should be removed from the cache
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 2, lastRetry: now - 9 * 60 * 60 * 1000 })
-    returnPayload = true
-    await checkCacheForRetrievablePayloads(minerPeerId, deal, getDealPayloadCid, cache, now)
-    assert.strictEqual(payloadsCalled, 3)
-    assert.strictEqual(deal.payload_unretrievable, false)
-    assert.strictEqual(deal.payload_cid, payloadCid)
-    assert.strictEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), undefined)
+  after(async () => {
+    await pgPool.end()
   })
 
-  it('piece indexer updates deals that were set to be retrievable or not retrievable', async (t) => {
-    const cache = new NodeCache()
-    const payloadCid = 'PAYLOAD_CID'
-    let returnPayload = false
-    let payloadsCalled = 0
-    const minerPeerId = 'MINER_PEER_ID'
-    const getDealPayloadCid = async () => {
-      payloadsCalled++
-      return returnPayload ? payloadCid : null
-    }
-    const fetchMinerId = async () => {
-      return { PeerId: minerPeerId }
-    }
-    const pieceCid = 'PIECE_CID'
-    const now = Date.now()
-    const deal = Value.Parse(ActiveDealDbEntry, {
-      miner_id: 1,
-      piece_cid: pieceCid,
-      client_id: 1,
-      activated_at_epoch: 1,
-      piece_size: 1000,
-      term_start_epoch: 1,
-      term_min: 1,
-      term_max: 1,
-      sector_id: 1,
-      payload_cid: undefined,
-      payload_unretrievable: undefined
-    })
-    // We start with a clean table an insert a single deal with no payload
+  beforeEach(async () => {
     await pgPool.query('DELETE FROM active_deals')
+  })
+  it('piece indexer does not retry to fetch missing payloads if the last retrieval was too recent', async (t) => {
+    const returnPayload = false
+    let payloadsCalled = 0
+    const getDealPayloadCid = async () => {
+      payloadsCalled++
+      return returnPayload ? payloadCid : null
+    }
+
+    const deal = Value.Parse(ActiveDealDbEntry, {
+      miner_id: 1,
+      piece_cid: pieceCid,
+      client_id: 1,
+      activated_at_epoch: 1,
+      piece_size: 1000,
+      term_start_epoch: 1,
+      term_min: 1,
+      term_max: 1,
+      sector_id: 1,
+      payload_cid: undefined,
+      payload_unretrievable: undefined,
+      last_payload_retrieval: undefined
+    })
+
     await storeActiveDeals([deal], pgPool)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
-    // The payload is unretrievable on the first try and should be stored in the cache
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, cache, now)
+    // The payload is unretrievable and the last retrieval timestamp should be updated
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    // The timestamp on when the last retrieval of the payload was, was not yet set, so the piece indexer will try to fetch the payload
     assert.strictEqual(payloadsCalled, 1)
-    assert.deepStrictEqual(cache.get(JSON.stringify({ minerPeerId, pieceCid })), { retriesLeft: 4, lastRetry: now })
+    deal.last_payload_retrieval = BigInt(now)
+    assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
+    // If we retry now without changing the field last_payload_retrieval the function for calling payload should not be called
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    assert.strictEqual(payloadsCalled, 1)
+  })
 
-    // If the last retry is more than 9 hours ago we should retry and if it is the last retry the entry should be removed from the cache and marked as unretrievable
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, cache, now)
-    assert.strictEqual(payloadsCalled, 2)
-    deal.payload_unretrievable = true
-    // The deal should be marked as unretrievable and reflected in the database
-    assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals WHERE payload_unretrievable = TRUE'))[0], deal)
+  it('piece indexer sets the payload to be unretrievable if the second attempt fails', async (t) => {
+    const returnPayload = false
+    let payloadsCalled = 0
+    const getDealPayloadCid = async () => {
+      payloadsCalled++
+      return returnPayload ? payloadCid : null
+    }
+    // If we set the last_payload_retrieval to a value more than three days ago the piece indexer should try again to fetch the payload CID
+    const deal = Value.Parse(ActiveDealDbEntry, {
+      miner_id: 1,
+      piece_cid: pieceCid,
+      client_id: 1,
+      activated_at_epoch: 1,
+      piece_size: 1000,
+      term_start_epoch: 1,
+      term_min: 1,
+      term_max: 1,
+      sector_id: 1,
+      payload_cid: undefined,
+      payload_unretrievable: undefined,
+      last_payload_retrieval: BigInt(now - 1000 * 60 * 60 * 24 * 4)
+    })
 
-    // Payloads that can be retrieved on some retries should be marked as not unretrievable and the cache should remove the entry
-    await pgPool.query('DELETE FROM active_deals')
     await storeActiveDeals([deal], pgPool)
-    cache.set(JSON.stringify({ minerPeerId, pieceCid }), { retriesLeft: 1, lastRetry: now - 9 * 60 * 60 * 1000 })
-    returnPayload = true
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, cache, now)
-    assert.strictEqual(payloadsCalled, 3)
-    deal.payload_unretrievable = false
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    assert.strictEqual(payloadsCalled, 1)
+    // This is the second attempt that failed to fetch the payload CID so the deal should be marked as unretrievable
+    deal.payload_unretrievable = true
+    deal.last_payload_retrieval = BigInt(now)
+    assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
+    // Now the piece indexer should no longer call the payload request for this deal
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    assert.strictEqual(payloadsCalled, 1)
+  })
+
+  it('piece indexer correctly udpates the payloads if the retry succeeeds', async (t) => {
+    const returnPayload = true
+    let payloadsCalled = 0
+    const getDealPayloadCid = async () => {
+      payloadsCalled++
+      return returnPayload ? payloadCid : null
+    }
+    // If we set the last_payload_retrieval to a value more than three days ago the piece indexer should try again to fetch the payload CID
+    const deal = Value.Parse(ActiveDealDbEntry, {
+      miner_id: 1,
+      piece_cid: pieceCid,
+      client_id: 1,
+      activated_at_epoch: 1,
+      piece_size: 1000,
+      term_start_epoch: 1,
+      term_min: 1,
+      term_max: 1,
+      sector_id: 1,
+      payload_cid: undefined,
+      payload_unretrievable: undefined,
+      last_payload_retrieval: BigInt(now - 1000 * 60 * 60 * 24 * 4)
+    })
+
+    await storeActiveDeals([deal], pgPool)
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    assert.strictEqual(payloadsCalled, 1)
+    deal.last_payload_retrieval = BigInt(now)
     deal.payload_cid = payloadCid
-    assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals WHERE payload_unretrievable = FALSE'))[0], deal)
+    // The second attempt at retrieving the payload cid was successful and this should be reflected in the database entry
+    assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
+
+    // Now the piece indexer should no longer call the payload request for this deal
+    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    assert.strictEqual(payloadsCalled, 1)
   })
 })
