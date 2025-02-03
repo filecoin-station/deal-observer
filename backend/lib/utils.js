@@ -19,6 +19,7 @@ export function convertBlockEventToActiveDealDbEntry (blockEvent) {
     term_min: blockEvent.event.termMin,
     term_max: blockEvent.event.termMax,
     sector_id: blockEvent.event.sector,
-    payload_cid: undefined
+    payload_cid: undefined,
+    payload_unretrievable: undefined
   })
 }

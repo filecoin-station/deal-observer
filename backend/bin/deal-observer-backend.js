@@ -11,6 +11,7 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuil
 import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
+import NodeCache from 'node-cache'
 
 const {
   INFLUXDB_TOKEN,
@@ -124,12 +125,13 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 
 export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
   const LOOP_NAME = 'Piece Indexer'
+  const payloadsCache = new NodeCache()
   while (true) {
     const start = Date.now()
     // Maximum number of deals to index in one loop iteration
     const maxDeals = 1000
     try {
-      await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, payloadsCache)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
