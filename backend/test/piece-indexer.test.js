@@ -44,7 +44,7 @@ describe('deal-observer-backend piece indexer', () => {
     )
   })
 
-  it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async () => {
+  it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     const getDealPayloadCidCalls = []
     const getDealPayloadCid = async (providerId, pieceCid) => {
       getDealPayloadCidCalls.push({ providerId, pieceCid })
