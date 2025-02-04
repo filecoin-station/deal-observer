@@ -104,7 +104,7 @@ describe('deal-observer-backend', () => {
   })
 })
 
-describe('deal-observer-backend', () => {
+describe('deal-observer-backend built in actor event observer', () => {
   let pgPool
   const makeRpcRequest = async (method, params) => {
     switch (method) {
