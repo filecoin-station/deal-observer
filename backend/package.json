@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/debug": "^4.1.12",
     "@types/pg-cursor": "^2.7.2",
+    "@types/slug": "^5.0.9",
     "standard": "^17.1.2"
   },
   "dependencies": {
