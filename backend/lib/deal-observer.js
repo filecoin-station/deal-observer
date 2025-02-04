@@ -75,7 +75,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           unnest($8::int[]), 
           unnest($9::bigint[]),
           unnest($10::boolean[]),
-          unnest($11::bigint[])
+          unnest($11::timestamp[])
 
         )
       `

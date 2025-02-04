@@ -17,13 +17,13 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
  * @returns {Promise<void>}
  */
 export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
-  for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals, now - THREE_DAYS_IN_MILLISECONDS)) {
+  for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid && deal.last_payload_retrieval) {
       deal.payload_unretrievable = true
     }
-    deal.last_payload_retrieval = BigInt(now)
+    deal.last_payload_retrieval = new Date(now)
     await updatePayloadInActiveDeal(pgPool, deal)
   }
 }
@@ -31,7 +31,7 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
 /**
    * @param {Queryable} pgPool
    * @param {number} maxDeals
-   * @param {number} now
+   * @param {Date} now
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
