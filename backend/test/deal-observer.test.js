@@ -5,8 +5,12 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, 
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
+/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
 
 describe('deal-observer-backend', () => {
+  /**
+   * @type {PgPool}
+   */
   let pgPool
   before(async () => {
     pgPool = await createPgPool()
@@ -74,6 +78,9 @@ describe('deal-observer-backend', () => {
   })
 
   it('check number of stored deals', async () => {
+    /**
+     * @param {{id:number,provider:number,client:number,pieceCid:string,pieceSize:bigint,termStart:number,termMin:number,termMax:number,sector:bigint}} eventData
+     */
     const storeBlockEvent = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
