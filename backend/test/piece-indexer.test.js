@@ -3,7 +3,7 @@ import { before, beforeEach, it, describe, after } from 'node:test'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { parse } from '@ipld/dag-json'
-import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
+import { fetchAndStoreActiveDeals } from '../lib/deal-observer.js'
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
@@ -36,7 +36,7 @@ describe('deal-observer-backend piece indexer', () => {
     await pgPool.query('DELETE FROM active_deals')
     const startEpoch = 4622129
     for (let blockHeight = startEpoch; blockHeight < startEpoch + 10; blockHeight++) {
-      await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
+      await fetchAndStoreActiveDeals(blockHeight, pgPool, makeRpcRequest)
     }
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals')).rows.length,
@@ -44,7 +44,7 @@ describe('deal-observer-backend piece indexer', () => {
     )
   })
 
-  it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
+  it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async () => {
     const getDealPayloadCidCalls = []
     const getDealPayloadCid = async (providerId, pieceCid) => {
       getDealPayloadCidCalls.push({ providerId, pieceCid })

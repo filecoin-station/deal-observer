@@ -1,18 +1,38 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 
-import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
+import { getActorEvents, getActorEventsFilter, getChainHead } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 import { convertBlockEventToActiveDealDbEntry } from './utils.js'
 
 /**
- * @param {number} blockHeight
  * @param {Queryable} pgPool
- * @param {(method:string,params:object) => object} makeRpcRequest
+ * @param {number} maxPastEpochs
+ * @param {number} finalityEpochs
+ * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
  * @returns {Promise<void>}
  */
-export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {
+export const observeBuiltinActorEvents = async (pgPool, makeRpcRequest, maxPastEpochs, finalityEpochs) => {
+  const currentChainHead = await getChainHead(makeRpcRequest)
+  const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+  const startEpoch = Math.max(
+    currentChainHead.Height - maxPastEpochs,
+    (lastInsertedDeal?.activated_at_epoch + 1) || 0
+  )
+  const endEpoch = currentChainHead.Height - finalityEpochs
+  for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
+    await fetchAndStoreActiveDeals(epoch, pgPool, makeRpcRequest)
+  }
+}
+
+/**
+ *
+ * @param {Queryable} pgPool
+ * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
+ * @param {number} blockHeight
+ */
+export const fetchAndStoreActiveDeals = async (blockHeight, pgPool, makeRpcRequest) => {
   const eventType = 'claim'
   const blockEvents = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
   console.log(`Observed ${blockEvents.length} ${eventType} events in block ${blockHeight}`)
