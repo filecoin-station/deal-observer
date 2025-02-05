@@ -12,17 +12,20 @@ import { getMinerPeerId } from './rpc-service/service.js'
  * @param {function} getDealPayloadCid
  * @param {Queryable} pgPool
  * @param {number} maxDeals
- * @returns {Promise<void>}
+ * @returns {Promise<number>}
  */
 export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
+  let missingPayloadCidsResolved = 0
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     const payloadCid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (payloadCid) {
       deal.payload_cid = payloadCid
       await updatePayloadInActiveDeal(pgPool, deal)
+      missingPayloadCidsResolved++
     }
   }
+  return missingPayloadCidsResolved
 }
 
 /**
@@ -33,6 +36,12 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
   const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
   return await loadDeals(pgPool, query, [maxDeals])
+}
+
+export async function countStoredActiveDealsWithMissingPayloadCid (pgPool) {
+  const query = 'SELECT COUNT(*) FROM active_deals WHERE payload_cid IS NULL'
+  const result = await pgPool.query(query)
+  return result.rows[0].count
 }
 
 /**

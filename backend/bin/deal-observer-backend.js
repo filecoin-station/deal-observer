@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { indexPieces } from '../lib/piece-indexer.js'
+import { countStoredActiveDealsWithMissingPayloadCid, indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 
@@ -133,7 +133,14 @@ export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool
     // Maximum number of deals to index in one loop iteration
     const maxDeals = 1000
     try {
-      await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfMissingPayloadsCidsResolved = await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfMissingPayloadsCids = await countStoredActiveDealsWithMissingPayloadCid(pgPool)
+      if (INFLUXDB_TOKEN) {
+        recordTelemetry('piece_indexer_stats', point => {
+          point.intField('total_missing_payload_cids', numOfMissingPayloadsCids)
+          point.intField('missing_payload_cids_resolved', numOfMissingPayloadsCidsResolved)
+        })
+      }
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
