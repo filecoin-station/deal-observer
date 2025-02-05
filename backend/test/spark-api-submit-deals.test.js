@@ -98,7 +98,15 @@ describe('Submit deals to spark-api', () => {
 
 /**
  * @param {Queryable} pgPool
- * @param {*} param1
+ * @param {Object} activeDeal
+ * @param {string} activeDeal.createdAt
+ * @param {string} activeDeal.startsAt
+ * @param {string} activeDeal.expiresAt
+ * @param {number} [activeDeal.minerId=2]
+ * @param {number} [activeDeal.clientId=3]
+ * @param {string} [activeDeal.pieceCid='cidone']
+ * @param {string | null} [activeDeal.payloadCid=null]
+ * @returns {Promise<void>}
  */
 const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null }) => {
   const { activatedAtEpoch, termStart, termMin, termMax } = calculateActiveDealEpochs(createdAt, startsAt, expiresAt)
