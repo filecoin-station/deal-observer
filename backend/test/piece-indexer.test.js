@@ -64,7 +64,7 @@ describe('deal-observer-backend piece indexer', () => {
     )
   })
 
-  it('piece indexer count number of missing payload CIDs', async (t) => {
+  it('piece indexer count number of missing payload CIDs', async () => {
     let missingPayloadCids = await countStoredActiveDealsWithMissingPayloadCid(pgPool)
     assert.strictEqual(missingPayloadCids, 336n)
     const getDealPayloadCidCalls = []
