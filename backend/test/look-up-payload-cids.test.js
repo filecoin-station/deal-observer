@@ -7,9 +7,9 @@ import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { countStoredActiveDealsWithMissingPayloadCid, indexPieces } from '../lib/piece-indexer.js'
+import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 
-describe('deal-observer-backend piece indexer', () => {
+describe('deal-observer-backend look up payload CIDs', () => {
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
@@ -56,7 +56,7 @@ describe('deal-observer-backend piece indexer', () => {
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
     assert.strictEqual(getDealPayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
@@ -65,7 +65,7 @@ describe('deal-observer-backend piece indexer', () => {
   })
 
   it('piece indexer count number of missing payload CIDs', async () => {
-    let missingPayloadCids = await countStoredActiveDealsWithMissingPayloadCid(pgPool)
+    let missingPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
     assert.strictEqual(missingPayloadCids, 336n)
     const getDealPayloadCidCalls = []
     const getDealPayloadCid = async (providerId, pieceCid) => {
@@ -74,8 +74,8 @@ describe('deal-observer-backend piece indexer', () => {
       return payloadCid?.payloadCid
     }
 
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
-    missingPayloadCids = await countStoredActiveDealsWithMissingPayloadCid(pgPool)
+    await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    missingPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
     assert.strictEqual(missingPayloadCids, 85n)
   })
 })

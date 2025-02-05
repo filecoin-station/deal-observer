@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { countStoredActiveDealsWithMissingPayloadCid, indexPieces } from '../lib/piece-indexer.js'
+import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 
@@ -126,19 +126,19 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
-export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
-  const LOOP_NAME = 'Piece Indexer'
+export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
+  const LOOP_NAME = 'Look up payload CIDs'
   while (true) {
     const start = Date.now()
-    // Maximum number of deals to index in one loop iteration
+    // Maximum number of deals to look up payload CIDs for in one loop iteration
     const maxDeals = 1000
     try {
-      const numOfMissingPayloadsCidsResolved = await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
-      const numOfMissingPayloadsCids = await countStoredActiveDealsWithMissingPayloadCid(pgPool)
+      const numOfUnresolvedPayloadsCidsResolved = await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfUnresolvedPayloadsCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
       if (INFLUXDB_TOKEN) {
-        recordTelemetry('piece_indexer_stats', point => {
-          point.intField('total_missing_payload_cids', numOfMissingPayloadsCids)
-          point.intField('missing_payload_cids_resolved', numOfMissingPayloadsCidsResolved)
+        recordTelemetry('look_up_payload_cids_stats', point => {
+          point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadsCids)
+          point.intField('unresolved_payload_cids_resolved', numOfUnresolvedPayloadsCidsResolved)
         })
       }
     } catch (e) {
@@ -162,7 +162,7 @@ export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool
 }
 
 await Promise.all([
-  pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
+  lookUpPayloadCidsLoop(rpcRequest, getDealPayloadCid, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
