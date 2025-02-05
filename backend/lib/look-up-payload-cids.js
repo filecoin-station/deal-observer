@@ -14,7 +14,7 @@ import { getMinerPeerId } from './rpc-service/service.js'
  * @param {number} maxDeals
  * @returns {Promise<void>}
  */
-export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
+export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     const payloadCid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
@@ -30,7 +30,7 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
    * @param {number} maxDeals
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
-export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
+async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
   const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
   return await loadDeals(pgPool, query, [maxDeals])
 }

@@ -7,9 +7,9 @@ import { observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { indexPieces } from '../lib/piece-indexer.js'
+import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 
-describe('deal-observer-backend piece indexer', () => {
+describe('deal-observer-backend look up payload CIDs', () => {
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
@@ -56,7 +56,7 @@ describe('deal-observer-backend piece indexer', () => {
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
     assert.strictEqual(getDealPayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
