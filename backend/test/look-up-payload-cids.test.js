@@ -7,11 +7,11 @@ import { loadDeals, observeBuiltinActorEvents, storeActiveDeals } from '../lib/d
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { indexPieces } from '../lib/piece-indexer.js'
+import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { Value } from '@sinclair/typebox/value'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
 
-describe('deal-observer-backend piece indexer', () => {
+describe('deal-observer-backend look up payload CIDs', () => {
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
@@ -58,7 +58,7 @@ describe('deal-observer-backend piece indexer', () => {
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
-    await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
     assert.strictEqual(getDealPayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
@@ -115,13 +115,13 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     await storeActiveDeals([deal], pgPool)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
     // The payload is unretrievable and the last retrieval timestamp should be updated
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     // The timestamp on when the last retrieval of the payload was, was not yet set, so the piece indexer will try to fetch the payload
     assert.strictEqual(payloadsCalled, 1)
     deal.last_payload_retrieval_attempt = new Date(now)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
     // If we retry now without changing the field last_payload_retrieval_attempt the function for calling payload should not be called
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
   })
 
@@ -149,14 +149,14 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     })
 
     await storeActiveDeals([deal], pgPool)
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
     // This is the second attempt that failed to fetch the payload CID so the deal should be marked as unretrievable
     deal.payload_unretrievable = true
     deal.last_payload_retrieval_attempt = new Date(now)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
     // Now the piece indexer should no longer call the payload request for this deal
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
   })
 
@@ -184,7 +184,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     })
 
     await storeActiveDeals([deal], pgPool)
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
     deal.last_payload_retrieval_attempt = new Date(now)
     deal.payload_cid = payloadCid
@@ -192,7 +192,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
 
     // Now the piece indexer should no longer call the payload request for this deal
-    await indexPieces(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
+    await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
   })
 })

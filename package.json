@@ -27,7 +27,6 @@
   },
   "homepage": "https://github.com/filecoin-station/deal-observer#readme",
   "devDependencies": {
-    "@types/mocha": "^10.0.10",
     "@types/pg": "^8.11.11",
     "prettier": "^3.4.2",
     "standard": "^17.1.2",

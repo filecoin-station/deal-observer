@@ -16,7 +16,7 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
  * @param {number} maxDeals
  * @returns {Promise<void>}
  */
-export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
+export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
