@@ -134,7 +134,7 @@ describe('deal-observer-backend built in actor event observer', () => {
     assert.strictEqual(deals.length, 360)
   })
 
-  it('deal observer loop function correctly picks up from where the current storage is at', async () => {
+  it('correctly picks up from where the current storage is at', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 11, 10)
     let deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(deals.length, 25)
