@@ -35,7 +35,7 @@ export const observeBuiltinActorEvents = async (pgPool, makeRpcRequest, maxPastE
 export const fetchAndStoreActiveDeals = async (blockHeight, pgPool, makeRpcRequest) => {
   const eventType = 'claim'
   const blockEvents = await getActorEvents(getActorEventsFilter(blockHeight, eventType), makeRpcRequest)
-  console.log(`Observed ${blockEvents.length} ${eventType} events in block ${blockHeight}`)
+  console.log(`Fetched ${blockEvents.length} ${eventType} events from block ${blockHeight}`)
   await storeActiveDeals(blockEvents.map((event) => convertBlockEventToActiveDealDbEntry(event)), pgPool)
 }
 
