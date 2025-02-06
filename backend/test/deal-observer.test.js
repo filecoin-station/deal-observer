@@ -147,7 +147,7 @@ describe('deal-observer-backend built in actor event observer', () => {
     assert.strictEqual(deals.length, 360)
   })
 
-  it('deal observer loop function correctly applies the max past epoch and finality epoch parameters', async () => {
+  it('correctly applies the max past epoch and finality epoch parameters', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 11, 12)
     let deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     // No deals should be stored because the finality epoch is larger than the maximum past epoch parameter
