@@ -61,7 +61,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_min,
           term_max,
           sector_id,
-          payload_unretrievable,
+          payload_retrievability_state,
           last_payload_retrieval_attempt
         )
         VALUES (
@@ -74,7 +74,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           unnest($7::int[]), 
           unnest($8::int[]), 
           unnest($9::bigint[]),
-          unnest($10::boolean[]),
+          unnest($10::payload_retrievability_state[]),
           unnest($11::timestamp[])
 
         )
@@ -89,7 +89,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.term_min),
       activeDeals.map(deal => deal.term_max),
       activeDeals.map(deal => deal.sector_id),
-      activeDeals.map(deal => deal.payload_unretrievable),
+      activeDeals.map(deal => deal.payload_retrievability_state),
       activeDeals.map(deal => deal.last_payload_retrieval_attempt)
     ])
   } catch (error) {
