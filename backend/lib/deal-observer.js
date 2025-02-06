@@ -27,10 +27,9 @@ export const observeBuiltinActorEvents = async (pgPool, makeRpcRequest, maxPastE
 }
 
 /**
- *
+ * @param {number} blockHeight
  * @param {Queryable} pgPool
  * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
- * @param {number} blockHeight
  */
 export const fetchAndStoreActiveDeals = async (blockHeight, pgPool, makeRpcRequest) => {
   const eventType = 'claim'
