@@ -138,7 +138,7 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
       if (INFLUXDB_TOKEN) {
         recordTelemetry('look_up_payload_cids_stats', point => {
           point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadsCids)
-          point.intField('unresolved_payload_cids_resolved', numOfUnresolvedPayloadsCidsResolved)
+          point.intField('payload_cids_resolved', numOfUnresolvedPayloadsCidsResolved)
         })
       }
     } catch (e) {
