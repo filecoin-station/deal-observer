@@ -128,13 +128,13 @@ describe('deal-observer-backend built in actor event observer', () => {
   beforeEach(async () => {
     await pgPool.query('DELETE FROM active_deals')
   })
-  it('deal observer loop function stores all retrievable active deals if database is empty', async () => {
+  it('stores all retrievable active deals if database is empty', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 10, 0)
     const deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(deals.length, 360)
   })
 
-  it('deal observer loop function correctly picks up from where the current storage is at', async () => {
+  it('correctly picks up from where the current storage is at', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 11, 10)
     let deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(deals.length, 25)
@@ -147,7 +147,7 @@ describe('deal-observer-backend built in actor event observer', () => {
     assert.strictEqual(deals.length, 360)
   })
 
-  it('deal observer loop function correctly applies the max past epoch and finality epoch parameters', async () => {
+  it('correctly applies the max past epoch and finality epoch parameters', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 11, 12)
     let deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     // No deals should be stored because the finality epoch is larger than the maximum past epoch parameter
