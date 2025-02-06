@@ -5,7 +5,7 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, 
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
 import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
-import { PayloadRetrievabilityStateEnum } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parse } from '@ipld/dag-json'
@@ -53,7 +53,7 @@ describe('deal-observer-backend', () => {
       term_max: eventData.termMax,
       sector_id: eventData.sector,
       payload_cid: undefined,
-      payload_retrievability_state: PayloadRetrievabilityStateEnum.NotQueried,
+      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
       last_payload_retrieval_attempt: undefined
     }
     assert.deepStrictEqual(actualData, [expectedData])
@@ -70,7 +70,7 @@ describe('deal-observer-backend', () => {
       termMax: 12340,
       sector: 6n,
       payload_cid: undefined,
-      payload_retrievability_state: PayloadRetrievabilityStateEnum.NotQueried,
+      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
       last_payload_retrieval_attempt: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })

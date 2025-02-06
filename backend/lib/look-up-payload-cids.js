@@ -1,12 +1,11 @@
 import { loadDeals } from './deal-observer.js'
 import * as util from 'node:util'
 import { getMinerPeerId } from './rpc-service/service.js'
-import { PayloadRetrievabilityStateEnum } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
-/** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
-/** @import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js' */
+/** @import { ActiveDealDbEntry, PayloadRetrievabilityStateType } from '@filecoin-station/deal-observer-db/lib/types.js' */
 
 const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 
@@ -24,12 +23,12 @@ export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPoo
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
-        deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.TerminallyUnretrievable
+        deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
       } else {
-        deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Unresolved
+        deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
       }
     } else {
-      deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Resolved
+      deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
     }
     deal.last_payload_retrieval_attempt = new Date(now)
     await updatePayloadInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
@@ -50,7 +49,7 @@ export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
 /**
  * @param {Queryable} pgPool
  * @param {Static<typeof ActiveDealDbEntry>} deal
- * @param {Static< typeof PayloadRetrievabilityState>} newPayloadRetrievalState
+ * @param {Static< typeof PayloadRetrievabilityStateType>} newPayloadRetrievalState
  * @param {Date} lastRetrievalAttempTimestamp
  * @param {string} newPayloadCid
  * @returns { Promise<void>}
