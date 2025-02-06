@@ -8,9 +8,9 @@ import { convertBlockEventToActiveDealDbEntry } from './utils.js'
 
 /**
  * @param {Queryable} pgPool
+ * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
  * @param {number} maxPastEpochs
  * @param {number} finalityEpochs
- * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
  * @returns {Promise<void>}
  */
 export const observeBuiltinActorEvents = async (pgPool, makeRpcRequest, maxPastEpochs, finalityEpochs) => {
