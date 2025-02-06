@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { indexPieces } from '../lib/piece-indexer.js'
+import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
@@ -117,14 +117,14 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
-export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
-  const LOOP_NAME = 'Piece Indexer'
+export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
+  const LOOP_NAME = 'Look up payload CIDs'
   while (true) {
     const start = Date.now()
-    // Maximum number of deals to index in one loop iteration
+    // Maximum number of deals to look up payload CIDs for in one loop iteration
     const maxDeals = 1000
     try {
-      await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
@@ -146,7 +146,7 @@ export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool
 }
 
 await Promise.all([
-  pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
+  lookUpPayloadCidsLoop(rpcRequest, getDealPayloadCid, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
