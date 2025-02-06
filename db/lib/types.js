@@ -1,11 +1,13 @@
 import { Type } from '@sinclair/typebox'
 
-const PayloadRetrievabilityState = {
+const PayloadRetrievabilityStateEnum = {
   NotQueried: 'PAYLOAD_CID_NOT_QUERIED_YET',
   Unresolved: 'PAYLOAD_CID_UNRESOLVED',
   Resolved: 'PAYLOAD_CID_RESOLVED',
   TerminallyUnretrievable: 'PAYLOAD_CID_TERMINALLY_UNRETRIEVABLE'
 }
+
+const PayloadRetrievabilityState = Type.Enum(PayloadRetrievabilityStateEnum)
 
 const ActiveDealDbEntry = Type.Object({
   activated_at_epoch: Type.Number(),
@@ -18,8 +20,8 @@ const ActiveDealDbEntry = Type.Object({
   term_max: Type.Number(),
   sector_id: Type.BigInt(),
   payload_cid: Type.Optional(Type.String()),
-  payload_retrievability_state: Type.Optional(Type.Enum(PayloadRetrievabilityState)),
+  payload_retrievability_state: PayloadRetrievabilityState,
   last_payload_retrieval_attempt: Type.Optional(Type.Date())
 })
 
-export { ActiveDealDbEntry, PayloadRetrievabilityState }
+export { ActiveDealDbEntry, PayloadRetrievabilityState, PayloadRetrievabilityStateEnum }

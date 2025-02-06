@@ -3,13 +3,13 @@ import { before, beforeEach, it, describe, after } from 'node:test'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { parse } from '@ipld/dag-json'
-import { loadDeals, observeBuiltinActorEvents, storeActiveDeals } from '../lib/deal-observer.js'
+import { loadDeals, fetchAndStoreActiveDeals, storeActiveDeals } from '../lib/deal-observer.js'
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
 import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { Value } from '@sinclair/typebox/value'
-import { ActiveDealDbEntry, PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { ActiveDealDbEntry, PayloadRetrievabilityStateEnum } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 describe('deal-observer-backend look up payload CIDs', () => {
   const makeRpcRequest = async (method, params) => {
@@ -38,7 +38,7 @@ describe('deal-observer-backend look up payload CIDs', () => {
     await pgPool.query('DELETE FROM active_deals')
     const startEpoch = 4622129
     for (let blockHeight = startEpoch; blockHeight < startEpoch + 10; blockHeight++) {
-      await observeBuiltinActorEvents(blockHeight, pgPool, makeRpcRequest)
+      await fetchAndStoreActiveDeals(blockHeight, pgPool, makeRpcRequest)
     }
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals')).rows.length,
@@ -108,7 +108,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       term_max: 1,
       sector_id: 1,
       payload_cid: undefined,
-      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      payload_retrievability_state: PayloadRetrievabilityStateEnum.NotQueried,
       last_payload_retrieval_attempt: undefined
     })
 
@@ -119,7 +119,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     // The timestamp on when the last retrieval of the payload was, was not yet set, so the piece indexer will try to fetch the payload
     assert.strictEqual(payloadsCalled, 1)
     deal.last_payload_retrieval_attempt = new Date(now)
-    deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
+    deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Unresolved
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
     // If we retry now without changing the field last_payload_retrieval_attempt the function for calling payload should not be called
     await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
@@ -145,7 +145,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       term_max: 1,
       sector_id: 1,
       payload_cid: undefined,
-      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      payload_retrievability_state: PayloadRetrievabilityStateEnum.NotQueried,
       last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4)
     })
 
@@ -153,7 +153,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
     // This is the second attempt that failed to fetch the payload CID so the deal should be marked as unretrievable
-    deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
+    deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.TerminallyUnretrievable
     deal.last_payload_retrieval_attempt = new Date(now)
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
     // Now the piece indexer should no longer call the payload request for this deal
@@ -180,7 +180,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       term_max: 1,
       sector_id: 1,
       payload_cid: undefined,
-      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      payload_retrievability_state: PayloadRetrievabilityStateEnum.NotQueried,
       last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4)
     })
 
@@ -189,7 +189,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     assert.strictEqual(payloadsCalled, 1)
     deal.last_payload_retrieval_attempt = new Date(now)
     deal.payload_cid = payloadCid
-    deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
+    deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Resolved
     // The second attempt at retrieving the payload cid was successful and this should be reflected in the database entry
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals'))[0], deal)
 

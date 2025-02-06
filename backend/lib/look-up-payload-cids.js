@@ -1,11 +1,12 @@
 import { loadDeals } from './deal-observer.js'
 import * as util from 'node:util'
 import { getMinerPeerId } from './rpc-service/service.js'
-import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { PayloadRetrievabilityStateEnum } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
+/** @import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js' */
 
 const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 
@@ -23,15 +24,15 @@ export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPoo
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
-        deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
+        deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.TerminallyUnretrievable
       } else {
-        deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
+        deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Unresolved
       }
     } else {
-      deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
+      deal.payload_retrievability_state = PayloadRetrievabilityStateEnum.Resolved
     }
     deal.last_payload_retrieval_attempt = new Date(now)
-    await updatePayloadInActiveDeal(pgPool, deal)
+    await updatePayloadInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
   }
 }
 
@@ -49,9 +50,12 @@ export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
 /**
  * @param {Queryable} pgPool
  * @param {Static<typeof ActiveDealDbEntry>} deal
+ * @param {Static< typeof PayloadRetrievabilityState>} newPayloadRetrievalState
+ * @param {Date} lastRetrievalAttempTimestamp
+ * @param {string} newPayloadCid
  * @returns { Promise<void>}
  */
-async function updatePayloadInActiveDeal (pgPool, deal) {
+async function updatePayloadInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttempTimestamp, newPayloadCid) {
   const updateQuery = `
     UPDATE active_deals
     SET payload_cid = $1, payload_retrievability_state = $2, last_payload_retrieval_attempt = $3
@@ -59,9 +63,9 @@ async function updatePayloadInActiveDeal (pgPool, deal) {
   `
   try {
     await pgPool.query(updateQuery, [
-      deal.payload_cid,
-      deal.payload_retrievability_state,
-      deal.last_payload_retrieval_attempt,
+      newPayloadCid,
+      newPayloadRetrievalState,
+      lastRetrievalAttempTimestamp,
       deal.activated_at_epoch,
       deal.miner_id,
       deal.client_id,
