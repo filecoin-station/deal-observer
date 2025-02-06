@@ -11,7 +11,7 @@ const ActiveDealDbEntry = Type.Object({
   sector_id: Type.BigInt(),
   payload_cid: Type.Optional(Type.String()),
   payload_unretrievable: Type.Optional(Type.Boolean()),
-  last_payload_retrieval: Type.Optional(Type.Date())
+  last_payload_retrieval_attempt: Type.Optional(Type.Date())
 })
 
 export { ActiveDealDbEntry }

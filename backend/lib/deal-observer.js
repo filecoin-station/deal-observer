@@ -62,7 +62,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           term_max,
           sector_id,
           payload_unretrievable,
-          last_payload_retrieval
+          last_payload_retrieval_attempt
         )
         VALUES (
           unnest($1::int[]),
@@ -90,7 +90,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
       activeDeals.map(deal => deal.term_max),
       activeDeals.map(deal => deal.sector_id),
       activeDeals.map(deal => deal.payload_unretrievable),
-      activeDeals.map(deal => deal.last_payload_retrieval)
+      activeDeals.map(deal => deal.last_payload_retrieval_attempt)
     ])
   } catch (error) {
     // If any error occurs, roll back the transaction

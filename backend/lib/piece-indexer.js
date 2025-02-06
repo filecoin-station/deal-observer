@@ -20,10 +20,10 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
   for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
-    if (!deal.payload_cid && deal.last_payload_retrieval) {
+    if (!deal.payload_cid && deal.last_payload_retrieval_attempt) {
       deal.payload_unretrievable = true
     }
-    deal.last_payload_retrieval = new Date(now)
+    deal.last_payload_retrieval_attempt = new Date(now)
     await updatePayloadInActiveDeal(pgPool, deal)
   }
 }
@@ -35,7 +35,7 @@ export const indexPieces = async (makeRpcRequest, getDealPayloadCid, pgPool, max
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
 export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
-  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL AND payload_unretrievable IS DISTINCT FROM TRUE AND (last_payload_retrieval IS NULL OR last_payload_retrieval < $1) ORDER BY activated_at_epoch ASC LIMIT $2'
+  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL AND payload_unretrievable IS DISTINCT FROM TRUE AND (last_payload_retrieval_attempt IS NULL OR last_payload_retrieval_attempt < $1) ORDER BY activated_at_epoch ASC LIMIT $2'
   return await loadDeals(pgPool, query, [now, maxDeals])
 }
 
@@ -47,14 +47,14 @@ export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
 async function updatePayloadInActiveDeal (pgPool, deal) {
   const updateQuery = `
     UPDATE active_deals
-    SET payload_cid = $1, payload_unretrievable = $2, last_payload_retrieval = $3
+    SET payload_cid = $1, payload_unretrievable = $2, last_payload_retrieval_attempt = $3
     WHERE activated_at_epoch = $4 AND miner_id = $5 AND client_id = $6 AND piece_cid = $7 AND piece_size = $8 AND term_start_epoch = $9 AND term_min = $10 AND term_max = $11 AND sector_id = $12
   `
   try {
     await pgPool.query(updateQuery, [
       deal.payload_cid,
       deal.payload_unretrievable,
-      deal.last_payload_retrieval,
+      deal.last_payload_retrieval_attempt,
       deal.activated_at_epoch,
       deal.miner_id,
       deal.client_id,

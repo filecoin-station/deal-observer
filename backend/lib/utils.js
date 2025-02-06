@@ -21,6 +21,6 @@ export function convertBlockEventToActiveDealDbEntry (blockEvent) {
     sector_id: blockEvent.event.sector,
     payload_cid: undefined,
     payload_unretrievable: undefined,
-    last_payload_retrieval: undefined
+    last_payload_retrieval_attempt: undefined
   })
 }
