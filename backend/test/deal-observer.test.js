@@ -128,7 +128,7 @@ describe('deal-observer-backend built in actor event observer', () => {
   beforeEach(async () => {
     await pgPool.query('DELETE FROM active_deals')
   })
-  it('deal observer loop function stores all retrievable active deals if database is empty', async () => {
+  it('stores all retrievable active deals if database is empty', async () => {
     await observeBuiltinActorEvents(pgPool, makeRpcRequest, 10, 0)
     const deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(deals.length, 360)
