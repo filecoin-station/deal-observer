@@ -6,11 +6,12 @@ import timers from 'node:timers/promises'
 import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
-import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
+import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
+/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 
 const {
   INFLUXDB_TOKEN,
@@ -42,17 +43,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
     try {
-      const currentChainHead = await getChainHead(makeRpcRequest)
-      const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const startEpoch = Math.max(
-        currentChainHead.Height - maxPastEpochs,
-        (lastInsertedDeal?.activated_at_epoch + 1) || 0
-      )
-      const endEpoch = currentChainHead.Height - finalityEpochs
-
-      for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
-        await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
-      }
+      await observeBuiltinActorEvents(pgPool, makeRpcRequest, maxPastEpochs, finalityEpochs)
       const newLastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
       const numberOfStoredDeals = await countStoredActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
