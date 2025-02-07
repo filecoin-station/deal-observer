@@ -39,7 +39,6 @@ const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
-  const LOOP_NAME = 'Observe actor events'
   while (true) {
     const start = Date.now()
     try {
@@ -57,10 +56,10 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Observe actor events" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_builtin_actor_events', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
