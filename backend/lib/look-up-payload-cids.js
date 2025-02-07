@@ -15,10 +15,11 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
  * @param {function} getDealPayloadCid
  * @param {Queryable} pgPool
  * @param {number} maxDeals
- * @returns {Promise<void>}
+ * @returns {Promise<number>}
  */
 export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
-  for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
+  let missingPayloadCidsResolved = 0
+  for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid) {
@@ -28,11 +29,13 @@ export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPoo
         deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
       }
     } else {
+      missingPayloadCidsResolved++
       deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
     }
     deal.last_payload_retrieval_attempt = new Date(now)
-    await updatePayloadInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
+    await updatePayloadCidInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
   }
+  return missingPayloadCidsResolved
 }
 
 /**
@@ -41,9 +44,15 @@ export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPoo
    * @param {Date} now
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
-export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
+export async function fetchDealsWithUnresolvedPayloadCid (pgPool, maxDeals, now) {
   const query = "SELECT * FROM active_deals WHERE payload_cid IS NULL AND (payload_retrievability_state = 'PAYLOAD_CID_NOT_QUERIED_YET' OR payload_retrievability_state = 'PAYLOAD_CID_UNRESOLVED') AND (last_payload_retrieval_attempt IS NULL OR last_payload_retrieval_attempt < $1) ORDER BY activated_at_epoch ASC LIMIT $2"
   return await loadDeals(pgPool, query, [now, maxDeals])
+}
+
+export async function countStoredActiveDealsWithUnresolvedPayloadCid (pgPool) {
+  const query = 'SELECT COUNT(*) FROM active_deals WHERE payload_cid IS NULL'
+  const result = await pgPool.query(query)
+  return result.rows[0].count
 }
 
 /**
@@ -54,7 +63,7 @@ export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
  * @param {string} newPayloadCid
  * @returns { Promise<void>}
  */
-async function updatePayloadInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttemptTimestamp, newPayloadCid) {
+async function updatePayloadCidInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttemptTimestamp, newPayloadCid) {
   const updateQuery = `
     UPDATE active_deals
     SET payload_cid = $1, payload_retrievability_state = $2, last_payload_retrieval_attempt = $3

@@ -7,9 +7,9 @@ import { loadDeals, fetchAndStoreActiveDeals, storeActiveDeals } from '../lib/de
 import assert from 'assert'
 import { minerPeerIds } from './test_data/minerInfo.js'
 import { payloadCIDs } from './test_data/payloadCIDs.js'
-import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { Value } from '@sinclair/typebox/value'
 import { ActiveDealDbEntry, PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 
 describe('deal-observer-backend look up payload CIDs', () => {
   const makeRpcRequest = async (method, params) => {
@@ -64,6 +64,21 @@ describe('deal-observer-backend look up payload CIDs', () => {
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       85 // Not all deals have a payload CID in the test data
     )
+  })
+
+  it('piece indexer count number of missing payload CIDs', async () => {
+    let missingPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+    assert.strictEqual(missingPayloadCids, 336n)
+    const getDealPayloadCidCalls = []
+    const getDealPayloadCid = async (providerId, pieceCid) => {
+      getDealPayloadCidCalls.push({ providerId, pieceCid })
+      const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
+      return payloadCid?.payloadCid
+    }
+
+    await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, 10000)
+    missingPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+    assert.strictEqual(missingPayloadCids, 85n)
   })
 })
 
