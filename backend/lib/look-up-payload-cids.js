@@ -50,11 +50,11 @@ export async function fetchDealsWithNoPayloadCid (pgPool, maxDeals, now) {
  * @param {Queryable} pgPool
  * @param {Static<typeof ActiveDealDbEntry>} deal
  * @param {Static< typeof PayloadRetrievabilityStateType>} newPayloadRetrievalState
- * @param {Date} lastRetrievalAttempTimestamp
+ * @param {Date} lastRetrievalAttemptTimestamp
  * @param {string} newPayloadCid
  * @returns { Promise<void>}
  */
-async function updatePayloadInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttempTimestamp, newPayloadCid) {
+async function updatePayloadInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttemptTimestamp, newPayloadCid) {
   const updateQuery = `
     UPDATE active_deals
     SET payload_cid = $1, payload_retrievability_state = $2, last_payload_retrieval_attempt = $3
@@ -64,7 +64,7 @@ async function updatePayloadInActiveDeal (pgPool, deal, newPayloadRetrievalState
     await pgPool.query(updateQuery, [
       newPayloadCid,
       newPayloadRetrievalState,
-      lastRetrievalAttempTimestamp,
+      lastRetrievalAttemptTimestamp,
       deal.activated_at_epoch,
       deal.miner_id,
       deal.client_id,
