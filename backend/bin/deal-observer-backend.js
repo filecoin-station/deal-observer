@@ -125,11 +125,11 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
     const maxDeals = 1000
     try {
       const numOfPayloadCidsResolved = await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
-      const numOfUnresolvedPayloadsCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+      const numOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('look_up_payload_cids_stats', point => {
           point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadCids)
-          point.intField('payload_cids_resolved', numOfPayloadsCidsResolved)
+          point.intField('payload_cids_resolved', numOfPayloadCidsResolved)
         })
       }
     } catch (e) {
