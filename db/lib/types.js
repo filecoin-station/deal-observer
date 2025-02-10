@@ -10,6 +10,7 @@ const PayloadRetrievabilityState = {
 const PayloadRetrievabilityStateType = Type.Enum(PayloadRetrievabilityState)
 
 const ActiveDealDbEntry = Type.Object({
+  id: Type.Optional(Type.Number()),
   activated_at_epoch: Type.Number(),
   miner_id: Type.Number(),
   client_id: Type.Number(),

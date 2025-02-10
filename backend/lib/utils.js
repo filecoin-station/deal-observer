@@ -10,6 +10,7 @@ import { Value } from '@sinclair/typebox/value'
  */
 export function convertBlockEventToActiveDealDbEntry (blockEvent) {
   return Value.Parse(ActiveDealDbEntry, {
+    id: undefined, // Auto-generated primary key
     activated_at_epoch: blockEvent.height,
     miner_id: blockEvent.event.provider,
     client_id: blockEvent.event.client,
