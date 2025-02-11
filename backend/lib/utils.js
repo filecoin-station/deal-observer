@@ -2,15 +2,15 @@
 import { ActiveDealDbEntry, PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 /** @import { Static } from '@sinclair/typebox' */
+/** @import { ActiveDeal } from '@filecoin-station/deal-observer-db/lib/types.js' */
 
 /**
  *
  * @param {Static <typeof BlockEvent>} blockEvent
- * @returns { Static < typeof ActiveDealDbEntry> }
+ * @returns { Static < typeof ActiveDeal> }
  */
-export function convertBlockEventToActiveDealDbEntry (blockEvent) {
+export function convertBlockEventToActiveDeal (blockEvent) {
   return Value.Parse(ActiveDealDbEntry, {
-    id: undefined, // Auto-generated primary key
     activated_at_epoch: blockEvent.height,
     miner_id: blockEvent.event.provider,
     client_id: blockEvent.event.client,

@@ -4,7 +4,7 @@ import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observ
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, loadDeals, storeActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
 import { Value } from '@sinclair/typebox/value'
 import { BlockEvent } from '../lib/rpc-service/data-types.js'
-import { convertBlockEventToActiveDealDbEntry } from '../lib/utils.js'
+import { convertBlockEventToActiveDeal } from '../lib/utils.js'
 import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
@@ -40,8 +40,8 @@ describe('deal-observer-backend', () => {
       payload_cid: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-    const dbEntry = convertBlockEventToActiveDealDbEntry(event)
-    await storeActiveDeals([dbEntry], pgPool)
+    const activeDeal = convertBlockEventToActiveDeal(event)
+    await storeActiveDeals([activeDeal], pgPool)
     const actualData = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     const expectedData = {
       id: 1,
@@ -76,8 +76,8 @@ describe('deal-observer-backend', () => {
       last_payload_retrieval_attempt: undefined
     }
     const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-    const dbEntry = convertBlockEventToActiveDealDbEntry(event)
-    await storeActiveDeals([dbEntry], pgPool)
+    const activeDeal = convertBlockEventToActiveDeal(event)
+    await storeActiveDeals([activeDeal], pgPool)
     const expected = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     const actual = await fetchDealWithHighestActivatedEpoch(pgPool)
     assert.deepStrictEqual(expected, [actual])
@@ -86,8 +86,8 @@ describe('deal-observer-backend', () => {
   it('check number of stored deals', async () => {
     const storeBlockEvent = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
-      const dbEntry = convertBlockEventToActiveDealDbEntry(event)
-      await storeActiveDeals([dbEntry], pgPool)
+      const activeDeal = convertBlockEventToActiveDeal(event)
+      await storeActiveDeals([activeDeal], pgPool)
     }
     const data = {
       id: 1,
