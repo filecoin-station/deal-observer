@@ -1,13 +1,17 @@
 /** @import {PgPool, Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import { Static } from '@sinclair/typebox' */
+/** @import { ActiveDealDbEntry, PayloadRetrievabilityStateType } from '@filecoin-station/deal-observer-db/lib/types.js' */
 import Cursor from 'pg-cursor'
 import * as Sentry from '@sentry/node'
+import { Type } from '@sinclair/typebox'
+import { Value } from '@sinclair/typebox/value'
 
 /**
  * Finds deals that haven't been submitted to the Spark API yet and submits them.
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @param {(eligibleDeals: Array) => Promise<{ingested: number; skipped: number}>} submitDeals
+ * @param {(eligibleDeals: Array<Static<typeof SubmittableDeal>>) => Promise<{ingested: number; skipped: number}>} submitDeals
  * @returns {Promise<{submitted: number; ingested: number; skipped: number;}>} Number of deals submitted, ingested and skipped
  */
 export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDeals) => {
@@ -45,7 +49,7 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @returns {AsyncGenerator<Array>}
+ * @returns {AsyncGenerator<Array<Static<typeof SubmittableDeal>>, void, unknown>}
  */
 const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
@@ -72,7 +76,7 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   while (true) {
     const rows = await cursor.read(batchSize)
     if (rows.length === 0) break
-    yield rows
+    yield rows.map(row => Value.Parse(SubmittableDeal, row))
   }
 
   client.release()
@@ -82,7 +86,7 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
  * Mark deals as submitted.
  *
  * @param {Queryable} pgPool
- * @param {Array} eligibleDeals
+ * @param {Array<Static<typeof SubmittableDeal>>} eligibleDeals
  */
 const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`
@@ -112,7 +116,7 @@ const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
  *
  * @param {string} sparkApiBaseURL
  * @param {string} sparkApiToken
- * @param {Array} deals
+ * @param {Array<Static<typeof SubmittableDeal>>} deals
  * @returns {Promise<{ingested: number; skipped: number}>}
  */
 export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deals) => {
@@ -147,3 +151,12 @@ export const submitDealsToSparkApi = async (sparkApiBaseURL, sparkApiToken, deal
 
   return /** @type {{ingested: number; skipped: number}} */ (await response.json())
 }
+
+const SubmittableDeal = Type.Object({
+  miner_id: Type.Number(),
+  client_id: Type.Number(),
+  piece_cid: Type.String(),
+  piece_size: Type.BigInt(),
+  payload_cid: Type.String(),
+  expires_at: Type.Date()
+})
