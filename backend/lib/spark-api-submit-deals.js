@@ -1,6 +1,5 @@
 /** @import {PgPool, Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
-/** @import { ActiveDealDbEntry, PayloadRetrievabilityStateType } from '@filecoin-station/deal-observer-db/lib/types.js' */
 import Cursor from 'pg-cursor'
 import * as Sentry from '@sentry/node'
 import { Type } from '@sinclair/typebox'
@@ -49,7 +48,7 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @returns {AsyncGenerator<Array<Static<typeof SubmittableDeal>>, void, unknown>}
+ * @returns {AsyncGenerator<Array<Static<typeof SubmittableDeal>>>}
  */
 const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
