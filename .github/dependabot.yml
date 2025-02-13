@@ -10,6 +10,10 @@ updates:
     commit-message:
       prefix: "deps"
       prefix-development: "deps(dev)"
+    groups:
+      sentry:
+        patterns:
+          - "@sentry/*"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
