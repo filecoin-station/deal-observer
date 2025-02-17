@@ -55,7 +55,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "Observe actor events" took ${dt}ms`)
+    console.log(`Loop "Observe built-in actor events" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
       recordTelemetry('loop_builtin_actor_events', point => {
