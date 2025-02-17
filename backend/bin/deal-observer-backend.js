@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
+import { countStoredActiveDealsWithPayloadState, countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
@@ -125,10 +125,18 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
     const maxDeals = 1000
     try {
       const numOfPayloadCidsResolved = await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
-      const numOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+      const totalNumOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+      const totalNumOfResolvedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_RESOLVED')
+      const totalNumOfUnresolvedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_UNRESOLVED')
+      const totalNumOfTerminallyUnretrievablePayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_TERMINALLY_UNRETRIEVABLE')
+      const totalNumOfNotYetQueriedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_NOT_QUERIED_YET')
       if (INFLUXDB_TOKEN) {
         recordTelemetry('look_up_payload_cids_stats', point => {
-          point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadCids)
+          point.intField('total_unresolved_payload_cids', totalNumOfUnresolvedPayloadCids)
+          point.intField('total_unresolved_payload_cid_state', totalNumOfUnresolvedPayloadCidStates)
+          point.intField('total_resolved_payload_cid_state', totalNumOfResolvedPayloadCidStates)
+          point.intField('total_terminally_unretrievable_payload_cid_state', totalNumOfTerminallyUnretrievablePayloadCidStates)
+          point.intField('total_not_yet_queried_payload_cid_state', totalNumOfNotYetQueriedPayloadCidStates)
           point.intField('payload_cids_resolved', numOfPayloadCidsResolved)
         })
       }
