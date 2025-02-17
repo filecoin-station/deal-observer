@@ -163,7 +163,7 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       payload_cid: undefined,
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
       last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4),
-      reverted: undefined
+      reverted: false
     })
 
     await storeActiveDeals([deal], pgPool)

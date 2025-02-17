@@ -22,7 +22,7 @@ const ActiveDealDbEntry = Type.Object({
   payload_cid: Type.Optional(Type.String()),
   payload_retrievability_state: PayloadRetrievabilityStateType,
   last_payload_retrieval_attempt: Type.Optional(Type.Date()),
-  reverted: Type.Optional(Type.Boolean())
+  reverted: Type.Boolean()
 })
 
 export { ActiveDealDbEntry, PayloadRetrievabilityState, PayloadRetrievabilityStateType }
