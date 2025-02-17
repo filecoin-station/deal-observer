@@ -108,7 +108,7 @@ describe('deal-observer-backend', () => {
     assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
   })
 
-  it('deal with duplicate events', async () => {
+  it('deal with duplicate events in separate updates', async () => {
     const storeDeal = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
@@ -129,13 +129,40 @@ describe('deal-observer-backend', () => {
       last_payload_retrieval_attempt: undefined
     }
     await storeDeal(eventData)
-    let expected = await loadDeals(pgPool, 'SELECT * FROM active_deals')
-    assert.strictEqual(expected.length, 1)
+    let actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    assert.strictEqual(actual.length, 1)
     // If we only change the id, the unique constraint which does not include the id should prevent the insertion
     eventData.id = 2
     await storeDeal(eventData)
-    expected = await loadDeals(pgPool, 'SELECT * FROM active_deals')
-    assert.strictEqual(expected.length, 1)
+    actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    assert.strictEqual(actual.length, 1)
+  })
+  it('deal with duplicate events in a single update', async () => {
+    const storeDeal = async (events) => {
+      const dbEntries = events.map(data => {
+        const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+        return convertBlockEventToActiveDealDbEntry(event)
+      })
+      await storeActiveDeals(dbEntries, pgPool)
+    }
+    const eventData = {
+      id: 1,
+      provider: 2,
+      client: 3,
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
+      pieceSize: 4n,
+      termStart: 5,
+      termMin: 12340,
+      termMax: 12340,
+      sector: 6n,
+      payload_cid: undefined,
+      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      last_payload_retrieval_attempt: undefined
+    }
+    await storeDeal([eventData, { ...eventData, id: 2 }])
+    const actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    // Only one of the events will be stored in the database
+    assert.strictEqual(actual.length, 1)
   })
 })
 
