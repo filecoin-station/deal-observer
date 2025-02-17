@@ -171,9 +171,12 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
     // This is the second attempt that failed to fetch the payload CID so the deal should be marked as unretrievable
-    const expectedDealDbEntry = { id: 1, ...deal }
-    expectedDealDbEntry.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
-    expectedDealDbEntry.last_payload_retrieval_attempt = new Date(now)
+    const expectedDealDbEntry = {
+      id: 1,
+      ...deal,
+      payload_retrievability_state: PayloadRetrievabilityState.TerminallyUnretrievable,
+      last_payload_retrieval_attempt: new Date(now)
+    }
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals')), [expectedDealDbEntry])
     // Now the piece indexer should no longer call the payload request for this deal
     await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
@@ -206,10 +209,13 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
     await storeActiveDeals([deal], pgPool)
     await lookUpPayloadCids(fetchMinerId, getDealPayloadCid, pgPool, 10000, now)
     assert.strictEqual(payloadsCalled, 1)
-    const expectedDealDbEntry = { id: 1, ...deal }
-    expectedDealDbEntry.last_payload_retrieval_attempt = new Date(now)
-    expectedDealDbEntry.payload_cid = payloadCid
-    expectedDealDbEntry.payload_retrievability_state = PayloadRetrievabilityState.Resolved
+    const expectedDealDbEntry = {
+      id: 1,
+      ...deal,
+      payload_cid: payloadCid,
+      payload_retrievability_state: PayloadRetrievabilityState.Resolved,
+      last_payload_retrieval_attempt: new Date(now)
+    }
     // The second attempt at retrieving the payload cid was successful and this should be reflected in the database entry
     assert.deepStrictEqual((await loadDeals(pgPool, 'SELECT * FROM active_deals')), [expectedDealDbEntry])
 
