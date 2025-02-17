@@ -1,10 +1,13 @@
 import { loadDeals } from './deal-observer.js'
 import * as util from 'node:util'
 import { getMinerPeerId } from './rpc-service/service.js'
+import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
-/** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
+/** @import { ActiveDealDbEntry, PayloadRetrievabilityStateType } from '@filecoin-station/deal-observer-db/lib/types.js' */
+
+const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 
 /**
  *
@@ -12,43 +15,65 @@ import { getMinerPeerId } from './rpc-service/service.js'
  * @param {function} getDealPayloadCid
  * @param {Queryable} pgPool
  * @param {number} maxDeals
- * @returns {Promise<void>}
+ * @returns {Promise<number>}
  */
-export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals) => {
-  for (const deal of await fetchDealsWithNoPayloadCid(pgPool, maxDeals)) {
+export const lookUpPayloadCids = async (makeRpcRequest, getDealPayloadCid, pgPool, maxDeals, now = Date.now()) => {
+  let missingPayloadCidsResolved = 0
+  for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
-    const payloadCid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
-    if (payloadCid) {
-      deal.payload_cid = payloadCid
-      await updatePayloadInActiveDeal(pgPool, deal)
+    deal.payload_cid = await getDealPayloadCid(minerPeerId, deal.piece_cid)
+    if (!deal.payload_cid) {
+      if (deal.last_payload_retrieval_attempt) {
+        deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
+      } else {
+        deal.payload_retrievability_state = PayloadRetrievabilityState.Unresolved
+      }
+    } else {
+      missingPayloadCidsResolved++
+      deal.payload_retrievability_state = PayloadRetrievabilityState.Resolved
     }
+    deal.last_payload_retrieval_attempt = new Date(now)
+    await updatePayloadCidInActiveDeal(pgPool, deal, deal.payload_retrievability_state, deal.last_payload_retrieval_attempt, deal.payload_cid)
   }
+  return missingPayloadCidsResolved
 }
 
 /**
    * @param {Queryable} pgPool
    * @param {number} maxDeals
+   * @param {Date} now
    * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
    */
-async function fetchDealsWithNoPayloadCid (pgPool, maxDeals) {
-  const query = 'SELECT * FROM active_deals WHERE payload_cid IS NULL ORDER BY activated_at_epoch ASC LIMIT $1'
-  return await loadDeals(pgPool, query, [maxDeals])
+export async function fetchDealsWithUnresolvedPayloadCid (pgPool, maxDeals, now) {
+  const query = "SELECT * FROM active_deals WHERE payload_cid IS NULL AND (payload_retrievability_state = 'PAYLOAD_CID_NOT_QUERIED_YET' OR payload_retrievability_state = 'PAYLOAD_CID_UNRESOLVED') AND (last_payload_retrieval_attempt IS NULL OR last_payload_retrieval_attempt < $1) ORDER BY activated_at_epoch ASC LIMIT $2"
+  return await loadDeals(pgPool, query, [now, maxDeals])
+}
+
+export async function countStoredActiveDealsWithUnresolvedPayloadCid (pgPool) {
+  const query = 'SELECT COUNT(*) FROM active_deals WHERE payload_cid IS NULL'
+  const result = await pgPool.query(query)
+  return result.rows[0].count
 }
 
 /**
  * @param {Queryable} pgPool
  * @param {Static<typeof ActiveDealDbEntry>} deal
+ * @param {Static< typeof PayloadRetrievabilityStateType>} newPayloadRetrievalState
+ * @param {Date} lastRetrievalAttemptTimestamp
+ * @param {string} newPayloadCid
  * @returns { Promise<void>}
  */
-async function updatePayloadInActiveDeal (pgPool, deal) {
+async function updatePayloadCidInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttemptTimestamp, newPayloadCid) {
   const updateQuery = `
     UPDATE active_deals
-    SET payload_cid = $1
-    WHERE activated_at_epoch = $2 AND miner_id = $3 AND client_id = $4 AND piece_cid = $5 AND piece_size = $6 AND term_start_epoch = $7 AND term_min = $8 AND term_max = $9 AND sector_id = $10
+    SET payload_cid = $1, payload_retrievability_state = $2, last_payload_retrieval_attempt = $3
+    WHERE activated_at_epoch = $4 AND miner_id = $5 AND client_id = $6 AND piece_cid = $7 AND piece_size = $8 AND term_start_epoch = $9 AND term_min = $10 AND term_max = $11 AND sector_id = $12
   `
   try {
     await pgPool.query(updateQuery, [
-      deal.payload_cid,
+      newPayloadCid,
+      newPayloadRetrievalState,
+      lastRetrievalAttemptTimestamp,
       deal.activated_at_epoch,
       deal.miner_id,
       deal.client_id,

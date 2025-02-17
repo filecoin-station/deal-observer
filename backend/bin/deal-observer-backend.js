@@ -8,7 +8,7 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
+import { countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
@@ -121,7 +121,14 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
     // Maximum number of deals to look up payload CIDs for in one loop iteration
     const maxDeals = 1000
     try {
-      await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfPayloadCidsResolved = await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+      if (INFLUXDB_TOKEN) {
+        recordTelemetry('look_up_payload_cids_stats', point => {
+          point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadCids)
+          point.intField('payload_cids_resolved', numOfPayloadCidsResolved)
+        })
+      }
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
