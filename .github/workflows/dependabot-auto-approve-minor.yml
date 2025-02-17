@@ -21,6 +21,7 @@ jobs:
           - standard
           - prettier
           - '@sinclair/typebox'
+          - multiformats
     steps:
       - name: Dependabot metadata
         id: metadata
