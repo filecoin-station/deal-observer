@@ -12,16 +12,16 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 /**
  *
  * @param {function} makeRpcRequest
- * @param {function} resolvePayloadCid
+ * @param {function} makePayloadCidRequest
  * @param {Queryable} pgPool
  * @param {number} maxDeals
  * @returns {Promise<number>}
  */
-export const resolvePayloadCids = async (makeRpcRequest, resolvePayloadCid, pgPool, maxDeals, now = Date.now()) => {
+export const resolvePayloadCids = async (makeRpcRequest, makePayloadCidRequest, pgPool, maxDeals, now = Date.now()) => {
   let payloadCidsResolved = 0
   for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
-    deal.payload_cid = await resolvePayloadCid(minerPeerId, deal.piece_cid)
+    deal.payload_cid = await makePayloadCidRequest(minerPeerId, deal.piece_cid)
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
         deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable

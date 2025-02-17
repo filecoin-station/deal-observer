@@ -16,7 +16,7 @@ const PieceIndexerErrorResponse = Type.Object({
  * @param {string} pieceCid
  * @returns {Promise<string|null>}
  */
-export const resolvePayloadCid = async (providerId, pieceCid) => {
+export const payloadCidRequest = async (providerId, pieceCid) => {
   const url = PIECE_INDEXER_URL + '/sample/' + providerId + '/' + pieceCid
   try {
     const response = await pRetry(async () => await fetch(url, {
