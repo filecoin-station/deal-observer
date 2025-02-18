@@ -9,7 +9,7 @@ import { PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/l
 import { chainHeadTestData } from './test_data/chainHead.js'
 import { rawActorEventTestData } from './test_data/rawActorEvent.js'
 import { parse } from '@ipld/dag-json'
-import { countRevertedActiveDeals } from '../lib/look-up-payload-cids.js'
+import { countRevertedActiveDeals } from '../lib/resolve-payload-cids.js'
 
 describe('deal-observer-backend', () => {
   let pgPool
