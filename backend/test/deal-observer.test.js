@@ -131,7 +131,8 @@ describe('deal-observer-backend', () => {
     await storeDeal(eventData)
     let actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(actual.length, 1)
-    // If we only change the id, the unique constraint should prevent the insertion and fail silently
+    // If we only change the id, the unique constraint which does not include the id will prevent the insertion
+    // This test verifies that `storeDeal` handles such situation by ignoring the duplicate deal record
     eventData.id = 2
     await storeDeal(eventData)
     actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
