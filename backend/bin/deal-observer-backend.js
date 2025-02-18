@@ -8,9 +8,9 @@ import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
 import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { countStoredActiveDealsWithPayloadState, countStoredActiveDealsWithUnresolvedPayloadCid, lookUpPayloadCids } from '../lib/look-up-payload-cids.js'
+import { countStoredActiveDealsWithPayloadState, countStoredActiveDealsWithUnresolvedPayloadCid, resolvePayloadCids } from '../lib/resolve-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
-import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
+import { payloadCidRequest } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 
 const {
@@ -117,21 +117,21 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
-export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
-  const LOOP_NAME = 'Look up payload CIDs'
+export const resolvePayloadCidsLoop = async (makeRpcRequest, makePayloadCidRequest, pgPool) => {
+  const LOOP_NAME = 'Resolve payload CIDs'
   while (true) {
     const start = Date.now()
-    // Maximum number of deals to look up payload CIDs for in one loop iteration
+    // Maximum number of deals to resolve payload CIDs for in one loop iteration
     const maxDeals = 1000
     try {
-      const numOfPayloadCidsResolved = await lookUpPayloadCids(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfPayloadCidsResolved = await resolvePayloadCids(makeRpcRequest, makePayloadCidRequest, pgPool, maxDeals)
       const totalNumOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
       const totalNumOfResolvedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_RESOLVED')
       const totalNumOfUnresolvedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_UNRESOLVED')
       const totalNumOfTerminallyUnretrievablePayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_TERMINALLY_UNRETRIEVABLE')
       const totalNumOfNotYetQueriedPayloadCidStates = await countStoredActiveDealsWithPayloadState(pgPool, 'PAYLOAD_CID_NOT_QUERIED_YET')
       if (INFLUXDB_TOKEN) {
-        recordTelemetry('look_up_payload_cids_stats', point => {
+        recordTelemetry('resolve_payload_cids_stats', point => {
           point.intField('total_unresolved_payload_cids', totalNumOfUnresolvedPayloadCids)
           point.intField('total_unresolved_payload_cid_state', totalNumOfUnresolvedPayloadCidStates)
           point.intField('total_resolved_payload_cid_state', totalNumOfResolvedPayloadCidStates)
@@ -161,7 +161,7 @@ export const lookUpPayloadCidsLoop = async (makeRpcRequest, getDealPayloadCid, p
 }
 
 await Promise.all([
-  lookUpPayloadCidsLoop(rpcRequest, getDealPayloadCid, pgPool),
+  resolvePayloadCidsLoop(rpcRequest, payloadCidRequest, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,
