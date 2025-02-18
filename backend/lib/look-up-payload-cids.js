@@ -58,7 +58,7 @@ export async function countStoredActiveDealsWithUnresolvedPayloadCid (pgPool) {
 /**
  * @param {Queryable} pgPool
  * @param {Static< typeof PayloadRetrievabilityStateType>} state
- * @returns {Promise<Array<Static< typeof ActiveDealDbEntry>>>}
+ * @returns {Promise<number>}
  */
 export async function countStoredActiveDealsWithPayloadState (pgPool, state) {
   const query = 'SELECT COUNT(*) FROM active_deals WHERE payload_retrievability_state = $1'
