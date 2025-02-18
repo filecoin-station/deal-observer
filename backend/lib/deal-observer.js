@@ -97,6 +97,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
           unnest($11::timestamp[])
 
         )
+        ON CONFLICT ON CONSTRAINT unique_active_deals DO NOTHING
       `
     await pgPool.query(insertQuery, [
       activeDeals.map(deal => deal.activated_at_epoch),
