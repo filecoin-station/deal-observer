@@ -108,7 +108,7 @@ describe('deal-observer-backend', () => {
     assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
   })
 
-  it('simultaneously processes claims for a piece stored twice in the same sector', async () => {
+  it('serially processes claims for a piece stored twice in the same sector', async () => {
     const storeDeal = async (eventData) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
@@ -138,7 +138,7 @@ describe('deal-observer-backend', () => {
     actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(actual.length, 1)
   })
-  it('serially processes claims for a piece stored twice in the same sector', async () => {
+  it('simultaneously processes claims for a piece stored twice in the same sector', async () => {
     const storeDeal = async (events) => {
       const dbEntries = events.map(data => {
         const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
