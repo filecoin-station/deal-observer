@@ -170,8 +170,13 @@ describe('deal-observer-backend built in actor event observer', () => {
     switch (method) {
       case 'Filecoin.ChainHead':
         return parse(JSON.stringify(chainHeadTestData))
-      case 'Filecoin.GetActorEventsRaw':
-        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+      case 'Filecoin.GetActorEventsRaw': {
+        assert(typeof params[0] === 'object' && params[0], 'params[0] must be an object')
+        const filter = /** @type {{fromHeight: number; toHeight: number}} */(params[0])
+        assert(typeof filter.fromHeight === 'number', 'filter.fromHeight must be a number')
+        assert(typeof filter.toHeight === 'number', 'filter.toHeight must be a number')
+        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= filter.fromHeight && e.height <= filter.toHeight)
+      }
       default:
         console.error('Unknown method')
     }
