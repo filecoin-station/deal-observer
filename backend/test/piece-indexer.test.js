@@ -10,7 +10,7 @@ import { payloadCIDs } from './test_data/payloadCIDs.js'
 import { indexPieces } from '../lib/piece-indexer.js'
 
 /** @import {PgPool} from '@filecoin-station/deal-observer-db' */
-/** @import {MakeRpcRequest} from '../lib/typings.js' */
+/** @import {MakeRpcRequest, GetDealPayloadCid} from '../lib/typings.js' */
 
 describe('deal-observer-backend piece indexer', () => {
   /** @type {MakeRpcRequest} */
@@ -59,15 +59,11 @@ describe('deal-observer-backend piece indexer', () => {
 
   it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     const getDealPayloadCidCalls = []
-    /**
-     * @param {number} providerId
-     * @param {string} pieceCid
-     * @returns {Promise<string | undefined>}
-     */
+    /** @type {GetDealPayloadCid} */
     const getDealPayloadCid = async (providerId, pieceCid) => {
       getDealPayloadCidCalls.push({ providerId, pieceCid })
       const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
-      return payloadCid?.payloadCid
+      return payloadCid?.payloadCid ?? null
     }
 
     assert.strictEqual(

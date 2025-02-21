@@ -13,7 +13,7 @@ import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spa
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
 
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-/** @import {MakeRpcRequest} from '../lib/typings.js' */
+/** @import {MakeRpcRequest, GetDealPayloadCid} from '../lib/typings.js' */
 
 const {
   INFLUXDB_TOKEN,
@@ -135,7 +135,7 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 
 /**
  * @param {MakeRpcRequest} makeRpcRequest
- * @param {(providerId:string,pieceCid:string) => Promise<string|null>} getDealPayloadCid
+ * @param {GetDealPayloadCid} getDealPayloadCid
  * @param {*} pgPool
  */
 export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {

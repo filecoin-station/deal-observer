@@ -5,12 +5,12 @@ import { getMinerPeerId } from './rpc-service/service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
-/** @import {MakeRpcRequest} from './typings.js' */
+/** @import {MakeRpcRequest, GetDealPayloadCid} from './typings.js' */
 
 /**
  *
  * @param {MakeRpcRequest} makeRpcRequest
- * @param {function} getDealPayloadCid
+ * @param {GetDealPayloadCid} getDealPayloadCid
  * @param {Queryable} pgPool
  * @param {number} maxDeals
  * @returns {Promise<void>}
