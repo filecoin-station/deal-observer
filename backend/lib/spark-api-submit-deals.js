@@ -1,4 +1,4 @@
-/** @import {PgPool, Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import {PgPool, Queryable, UnknownRow} from '@filecoin-station/deal-observer-db' */
 import Cursor from 'pg-cursor'
 import * as Sentry from '@sentry/node'
 
@@ -45,7 +45,7 @@ export const findAndSubmitUnsubmittedDeals = async (pgPool, batchSize, submitDea
  *
  * @param {PgPool} pgPool
  * @param {number} batchSize
- * @returns {AsyncGenerator<Array<any>>}
+ * @returns {AsyncGenerator<UnknownRow[]>}
  */
 const findUnsubmittedDeals = async function * (pgPool, batchSize) {
   const client = await pgPool.connect()
@@ -82,7 +82,7 @@ const findUnsubmittedDeals = async function * (pgPool, batchSize) {
  * Mark deals as submitted.
  *
  * @param {Queryable} pgPool
- * @param {Array<any>} eligibleDeals
+ * @param {Array<UnknownRow>} eligibleDeals
  */
 const markDealsAsSubmitted = async (pgPool, eligibleDeals) => {
   await pgPool.query(`

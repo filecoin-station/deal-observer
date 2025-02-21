@@ -1,4 +1,4 @@
-/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import {Queryable, QueryResultWithUnknownRows} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import {MakeRpcRequest} from './typings.js' */
 
@@ -99,7 +99,9 @@ export async function storeActiveDeals (activeDeals, pgPool) {
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
 export async function loadDeals (pgPool, query, args = []) {
-  const result = (await pgPool.query(query, args)).rows.map((/** @type {any} */ deal) => {
+  /** @type {QueryResultWithUnknownRows} */
+  const { rows } = await pgPool.query(query, args)
+  const result = rows.map((deal) => {
     // SQL used null, typebox needs undefined for null values
     Object.keys(deal).forEach(key => {
       if (deal[key] === null) {

@@ -3,8 +3,8 @@ import { after, before, beforeEach, describe, it, mock } from 'node:test'
 import { createPgPool, migrateWithPgClient } from '@filecoin-station/deal-observer-db'
 import { calculateActiveDealEpochs, daysAgo, daysFromNow, today } from './test-helpers.js'
 import { findAndSubmitUnsubmittedDeals } from '../lib/spark-api-submit-deals.js'
-/** @import {PgPool} from '@filecoin-station/deal-observer-db' */
-/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+
+/** @import {PgPool, Queryable, QueryResultWithUnknownRows} from '@filecoin-station/deal-observer-db' */
 
 describe('Submit deals to spark-api', () => {
   /**
@@ -39,6 +39,7 @@ describe('Submit deals to spark-api', () => {
     const mockSubmitEligibleDeals = createSubmitEligibleDealsMock()
 
     const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    /** @type {QueryResultWithUnknownRows} */
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 2)
     assert.strictEqual(ingested, 2)
@@ -53,6 +54,7 @@ describe('Submit deals to spark-api', () => {
 
     // two deals are eligible for submission, batchSize is 1
     const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    /** @type {QueryResultWithUnknownRows} */
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 2)
     assert.strictEqual(ingested, 2)
@@ -70,6 +72,7 @@ describe('Submit deals to spark-api', () => {
 
     // two deals are eligible for submission, batchSize is 1
     const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    /** @type {QueryResultWithUnknownRows} */
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 1)
     assert.strictEqual(ingested, 1)
@@ -87,6 +90,7 @@ describe('Submit deals to spark-api', () => {
 
     // two deals are eligible for submission, batchSize is 1
     const { submitted, ingested, skipped } = await findAndSubmitUnsubmittedDeals(pgPool, batchSize, mockSubmitEligibleDeals)
+    /** @type {QueryResultWithUnknownRows} */
     const { rows } = await pgPool.query('SELECT * FROM active_deals WHERE submitted_at IS NOT NULL')
     assert.strictEqual(submitted, 2)
     assert.strictEqual(ingested, 1)

@@ -2,7 +2,7 @@ import { loadDeals } from './deal-observer.js'
 import * as util from 'node:util'
 import { getMinerPeerId } from './rpc-service/service.js'
 
-/** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import {Queryable, UnknownRow} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
 /** @import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js' */
 /** @import {MakeRpcRequest, GetDealPayloadCid} from './typings.js' */
