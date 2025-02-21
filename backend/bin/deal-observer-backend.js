@@ -3,15 +3,13 @@ import assert from 'node:assert'
 import { createPgPool } from '@filecoin-station/deal-observer-db'
 import * as Sentry from '@sentry/node'
 import timers from 'node:timers/promises'
-import slug from 'slug'
 import '../lib/instrument.js'
 import { createInflux } from '../lib/telemetry.js'
-import { getChainHead, rpcRequest } from '../lib/rpc-service/service.js'
+import { rpcRequest } from '../lib/rpc-service/service.js'
 import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuiltinActorEvents } from '../lib/deal-observer.js'
-import { indexPieces } from '../lib/piece-indexer.js'
+import { countStoredActiveDealsWithUnresolvedPayloadCid, resolvePayloadCids, countRevertedActiveDeals } from '../lib/resolve-payload-cids.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
-import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
-
+import { payloadCidRequest } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import {MakeRpcRequest, GetDealPayloadCid} from '../lib/typings.js' */
 
@@ -45,27 +43,18 @@ const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
  * @param {Queryable} pgPool
  */
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
-  const LOOP_NAME = 'Observe actor events'
   while (true) {
     const start = Date.now()
     try {
-      const currentChainHead = await getChainHead(makeRpcRequest)
-      const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
-      const startEpoch = Math.max(
-        currentChainHead.Height - maxPastEpochs,
-        lastInsertedDeal ? (lastInsertedDeal.activated_at_epoch ?? -1) + 1 : 0
-      )
-      const endEpoch = currentChainHead.Height - finalityEpochs
-
-      for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
-        await observeBuiltinActorEvents(epoch, pgPool, makeRpcRequest)
-      }
+      await observeBuiltinActorEvents(pgPool, makeRpcRequest, maxPastEpochs, finalityEpochs)
       const newLastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
       const numberOfStoredDeals = await countStoredActiveDeals(pgPool)
+      const numberOfRevertedActiveDeals = await countRevertedActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
           point.intField('last_searched_epoch', newLastInsertedDeal?.activated_at_epoch || 0)
           point.intField('number_of_stored_active_deals', numberOfStoredDeals)
+          point.intField('number_of_reverted_active_deals', numberOfRevertedActiveDeals)
         })
       }
     } catch (e) {
@@ -73,10 +62,10 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Observe built-in actor events" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_builtin_actor_events', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -97,7 +86,6 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
  * @param {number} args.sparkApiSubmitDealsBatchSize
  */
 const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken, sparkApiSubmitDealsBatchSize }) => {
-  const LOOP_NAME = 'Submit deals to spark-api'
   while (true) {
     const start = Date.now()
     try {
@@ -119,10 +107,10 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Submit deals to spark-api" took ${dt}ms`)
 
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_submit_deals_to_sparkapi', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -136,26 +124,32 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 /**
  * @param {MakeRpcRequest} makeRpcRequest
  * @param {GetDealPayloadCid} getDealPayloadCid
- * @param {*} pgPool
+ * @param {Queryable} pgPool
  */
-export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool) => {
-  const LOOP_NAME = 'Piece Indexer'
+export const resolvePayloadCidsLoop = async (makeRpcRequest, makePayloadCidRequest, pgPool) => {
   while (true) {
     const start = Date.now()
-    // Maximum number of deals to index in one loop iteration
+    // Maximum number of deals to resolve payload CIDs for in one loop iteration
     const maxDeals = 1000
     try {
-      await indexPieces(makeRpcRequest, getDealPayloadCid, pgPool, maxDeals)
+      const numOfPayloadCidsResolved = await resolvePayloadCids(makeRpcRequest, makePayloadCidRequest, pgPool, maxDeals)
+      const numOfUnresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
+      if (INFLUXDB_TOKEN) {
+        recordTelemetry('resolve_payload_cids_stats', point => {
+          point.intField('total_unresolved_payload_cids', numOfUnresolvedPayloadCids)
+          point.intField('resolved_payload_cids', numOfPayloadCidsResolved)
+        })
+      }
     } catch (e) {
       console.error(e)
       Sentry.captureException(e)
     }
     const dt = Date.now() - start
-    console.log(`Loop "${LOOP_NAME}" took ${dt}ms`)
+    console.log(`Loop "Look up payload CIDs" took ${dt}ms`)
 
     // For local monitoring and debugging, we can omit sending data to InfluxDB
     if (INFLUXDB_TOKEN) {
-      recordTelemetry(`loop_${slug(LOOP_NAME, '_')}`, point => {
+      recordTelemetry('loop_resolve_payload_cids', point => {
         point.intField('interval_ms', LOOP_INTERVAL)
         point.intField('duration_ms', dt)
       })
@@ -167,7 +161,7 @@ export const pieceIndexerLoop = async (makeRpcRequest, getDealPayloadCid, pgPool
 }
 
 await Promise.all([
-  pieceIndexerLoop(rpcRequest, getDealPayloadCid, pgPool),
+  resolvePayloadCidsLoop(rpcRequest, payloadCidRequest, pgPool),
   observeActorEventsLoop(rpcRequest, pgPool),
   sparkApiSubmitDealsLoop(pgPool, {
     sparkApiBaseUrl: SPARK_API_BASE_URL,

@@ -71,7 +71,8 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
             {
               height: typedEventEntries.height,
               emitter: typedEventEntries.emitter,
-              event: typedEvent
+              event: typedEvent,
+              reverted: typedEventEntries.reverted
             }))
         continue
       }
