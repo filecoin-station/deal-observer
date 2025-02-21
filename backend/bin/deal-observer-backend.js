@@ -52,7 +52,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       const numberOfRevertedActiveDeals = await countRevertedActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
-          point.intField('last_searched_epoch', newLastInsertedDeal?.activated_at_epoch || 0)
+          point.intField('last_searched_epoch', newLastInsertedDeal?.activated_at_epoch ?? 0)
           point.intField('number_of_stored_active_deals', numberOfStoredDeals)
           point.intField('number_of_reverted_active_deals', numberOfRevertedActiveDeals)
         })
