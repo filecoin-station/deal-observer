@@ -48,8 +48,7 @@ export const rpcRequest = async (method, params) => {
  * @returns {Promise<Array<Static<typeof BlockEvent>>>}
  */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
-  /** @typedef {unknown[]} ActorEventsRaw */
-  const rawEvents = /** @type {ActorEventsRaw} */(await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
+  const rawEvents = /** @type {unknown[]} */(await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
   if (!rawEvents || rawEvents.length === 0) {
     console.debug(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
