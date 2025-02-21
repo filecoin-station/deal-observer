@@ -12,7 +12,7 @@ import pRetry from 'p-retry'
 
 /**
  * @param {string} method
- * @param {unknown} params
+ * @param {unknown[]} params
  * @returns {Promise<unknown>}
  */
 export const rpcRequest = async (method, params) => {
