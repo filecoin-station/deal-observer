@@ -123,7 +123,7 @@ export async function storeActiveDeals (activeDeals, pgPool) {
 /**
    * @param {Queryable} pgPool
    * @param {string} query
-   * @param {Array<number | string>} args
+   * @param {Array<unknown>} args
    * @returns {Promise<Array<Static <typeof ActiveDealDbEntry>>>}
    */
 export async function loadDeals (pgPool, query, args = []) {

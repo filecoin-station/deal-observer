@@ -47,7 +47,7 @@ export const resolvePayloadCids = async (makeRpcRequest, makePayloadCidRequest, 
    */
 export async function fetchDealsWithUnresolvedPayloadCid (pgPool, maxDeals, now) {
   const query = "SELECT * FROM active_deals WHERE payload_cid IS NULL AND (payload_retrievability_state = 'PAYLOAD_CID_NOT_QUERIED_YET' OR payload_retrievability_state = 'PAYLOAD_CID_UNRESOLVED') AND (last_payload_retrieval_attempt IS NULL OR last_payload_retrieval_attempt < $1) ORDER BY activated_at_epoch ASC LIMIT $2"
-  return await loadDeals(pgPool, query, [now.toISOString(), maxDeals])
+  return await loadDeals(pgPool, query, [now, maxDeals])
 }
 
 /**
