@@ -4,7 +4,7 @@ import * as util from 'node:util'
 
 /**
  * @param {string} data
- * @returns
+ * @returns {unknown}
  */
 const decodeCborInBase64 = (data) => {
   return cborDecode(base64pad.baseDecode(data))
@@ -20,6 +20,7 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
   /** @type {Record<string, unknown>} */
   const event = {}
+  /** @type {string | undefined} */
   let eventType
   for (const entry of rawEventEntries) {
     // The key returned by the Lotus API is kebab-case, we convert it to camelCase
@@ -27,13 +28,13 @@ const rawEventEntriesToEvent = (rawEventEntries) => {
     let value = decodeCborInBase64(entry.Value)
     // In each entry exists an event type declaration which we need to extract
     if (key === '$type') {
-      eventType = value
+      eventType = /** @type {string} */(value)
       // The type entry is not part of the event itself
       continue
     }
 
     // Convert CID instanes to the string representation
-    if (value[Symbol.toStringTag] === 'CID') {
+    if (typeof value === 'object' && value && (Symbol.toStringTag in value) && value[Symbol.toStringTag] === 'CID') {
       value = value.toString()
     } else if (typeof value !== 'number') {
       throw new Error(util.format(
