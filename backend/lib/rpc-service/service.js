@@ -6,7 +6,9 @@ import { Value } from '@sinclair/typebox/value'
 import * as util from 'node:util'
 import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone, ChainHead } from './data-types.js'
 import pRetry from 'p-retry'
+
 /** @import { Static } from '@sinclair/typebox' */
+/** @import {MakeRpcRequest} from '../typings.js' */
 
 /**
  * @param {string} method
@@ -42,18 +44,19 @@ export const rpcRequest = async (method, params) => {
 /**
  * @param {{fromHeight:number,toHeight:number,fields: any}} actorEventFilter
  * Returns actor events filtered by the given actorEventFilter
- * @param {(method: string, params: any[]) => Promise<any>} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @returns {Promise<Array<Static<typeof BlockEvent>>>}
  */
 export async function getActorEvents (actorEventFilter, makeRpcRequest) {
-  const rawEvents = await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter])
+  /** @typedef {unknown[]} ActorEventsRaw */
+  const rawEvents = /** @type {ActorEventsRaw} */(await makeRpcRequest('Filecoin.GetActorEventsRaw', [actorEventFilter]))
   if (!rawEvents || rawEvents.length === 0) {
     console.debug(`No actor events found in the height range ${actorEventFilter.fromHeight} - ${actorEventFilter.toHeight}.`)
     return []
   }
   // TODO: handle reverted events
   // https://github.com/filecoin-station/deal-observer/issues/22
-  const typedRawEventEntries = rawEvents.map((/** @type {any} */ rawEvent) => Value.Parse(RawActorEvent, rawEvent))
+  const typedRawEventEntries = rawEvents.map((rawEvent) => Value.Parse(RawActorEvent, rawEvent))
   // An emitted event contains the height at which it was emitted, the emitter and the event itself
   const emittedEvents = []
   for (const typedEventEntries of typedRawEventEntries) {
@@ -81,7 +84,7 @@ export async function getActorEvents (actorEventFilter, makeRpcRequest) {
 }
 
 /**
- * @param {function} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @returns {Promise<Static<typeof ChainHead>>}
  */
 export async function getChainHead (makeRpcRequest) {
@@ -95,13 +98,17 @@ export async function getChainHead (makeRpcRequest) {
 
 /**
  * @param {number} minerId
- * @param {function} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @returns {Promise<string>}
  */
 export async function getMinerPeerId (minerId, makeRpcRequest) {
+  /** @typedef {{
+   * PeerId: string;
+   * }} MinerInfo
+   */
   try {
     const params = getMinerInfoCallParams(minerId)
-    const res = await makeRpcRequest('Filecoin.StateMinerInfo', params)
+    const res = /** @type {MinerInfo} */(await makeRpcRequest('Filecoin.StateMinerInfo', params))
     if (!res || !res.PeerId) {
       throw Error(`Failed to get peer ID for miner ${minerId}, result: ${res}`)
     }

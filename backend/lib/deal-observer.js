@@ -1,5 +1,6 @@
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
 /** @import { Static } from '@sinclair/typebox' */
+/** @import {MakeRpcRequest} from './typings.js' */
 
 import { getActorEvents, getActorEventsFilter } from './rpc-service/service.js'
 import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
@@ -9,7 +10,7 @@ import { convertBlockEventToActiveDealDbEntry } from './utils.js'
 /**
  * @param {number} blockHeight
  * @param {Queryable} pgPool
- * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @returns {Promise<void>}
  */
 export async function observeBuiltinActorEvents (blockHeight, pgPool, makeRpcRequest) {

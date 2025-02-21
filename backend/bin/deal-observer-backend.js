@@ -11,7 +11,9 @@ import { fetchDealWithHighestActivatedEpoch, countStoredActiveDeals, observeBuil
 import { indexPieces } from '../lib/piece-indexer.js'
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { getDealPayloadCid } from '../lib/piece-indexer-service.js'
+
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import {MakeRpcRequest} from '../lib/typings.js' */
 
 const {
   INFLUXDB_TOKEN,
@@ -39,7 +41,7 @@ const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
 /**
- * @param {(method:string,params:any[]) => Promise<any>} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @param {Queryable} pgPool
  */
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
@@ -132,7 +134,7 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 }
 
 /**
- * @param {(method:string,params:object) => object} makeRpcRequest
+ * @param {MakeRpcRequest} makeRpcRequest
  * @param {(providerId:string,pieceCid:string) => Promise<string|null>} getDealPayloadCid
  * @param {*} pgPool
  */
