@@ -42,7 +42,7 @@ export const rpcRequest = async (method, params) => {
   }
 }
 /**
- * @param {{fromHeight:number,toHeight:number,fields: any}} actorEventFilter
+ * @param {{fromHeight:number,toHeight:number,fields: unknown}} actorEventFilter
  * Returns actor events filtered by the given actorEventFilter
  * @param {MakeRpcRequest} makeRpcRequest
  * @returns {Promise<Array<Static<typeof BlockEvent>>>}

@@ -18,7 +18,7 @@ const decodeCborInBase64 = (data) => {
  */
 const rawEventEntriesToEvent = (rawEventEntries) => {
   // Each event is defined by a list of event entries which will parsed into a typed event
-  /** @type {Record<string, any>} */
+  /** @type {Record<string, unknown>} */
   const event = {}
   let eventType
   for (const entry of rawEventEntries) {
