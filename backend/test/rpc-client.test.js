@@ -7,7 +7,7 @@ import { getActorEvents, getActorEventsFilter, getChainHead, rpcRequest } from '
 import { ClaimEvent } from '../lib/rpc-service/data-types.js'
 import { Value } from '@sinclair/typebox/value'
 
-/** @import {MakeRpcRequest} from '../lib/typings.js' */
+/** @import {MakeRpcRequest} from '../lib/typings.d.ts' */
 
 describe('RpcApiClient', () => {
   /** @type {MakeRpcRequest} */

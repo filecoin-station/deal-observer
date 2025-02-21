@@ -110,6 +110,7 @@ describe('Submit deals to spark-api', () => {
  * @param {number} [activeDeal.clientId=3]
  * @param {string} [activeDeal.pieceCid='cidone']
  * @param {string | null} [activeDeal.payloadCid=null]
+ * @param {boolean} [activeDeal.reverted=false]
  * @returns {Promise<void>}
  */
 const givenActiveDeal = async (pgPool, { createdAt, startsAt, expiresAt, minerId = 2, clientId = 3, pieceCid = 'cidone', payloadCid = null, reverted = false }) => {

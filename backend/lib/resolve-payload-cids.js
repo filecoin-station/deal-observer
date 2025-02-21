@@ -11,8 +11,8 @@ const THREE_DAYS_IN_MILLISECONDS = 1000 * 60 * 60 * 24 * 3
 
 /**
  *
- * @param {function} makeRpcRequest
- * @param {function} makePayloadCidRequest
+ * @param {import('./typings.js').MakeRpcRequest} makeRpcRequest
+ * @param {import('./typings.js').MakePayloadCidRequest} makePayloadCidRequest
  * @param {Queryable} pgPool
  * @param {number} maxDeals
  * @returns {Promise<number>}
@@ -21,7 +21,8 @@ export const resolvePayloadCids = async (makeRpcRequest, makePayloadCidRequest, 
   let payloadCidsResolved = 0
   for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
-    deal.payload_cid = await makePayloadCidRequest(minerPeerId, deal.piece_cid)
+    const payloadCid = await makePayloadCidRequest(minerPeerId, deal.piece_cid)
+    deal.payload_cid = payloadCid !== null ? payloadCid : undefined
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
         deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
@@ -46,9 +47,13 @@ export const resolvePayloadCids = async (makeRpcRequest, makePayloadCidRequest, 
    */
 export async function fetchDealsWithUnresolvedPayloadCid (pgPool, maxDeals, now) {
   const query = "SELECT * FROM active_deals WHERE payload_cid IS NULL AND (payload_retrievability_state = 'PAYLOAD_CID_NOT_QUERIED_YET' OR payload_retrievability_state = 'PAYLOAD_CID_UNRESOLVED') AND (last_payload_retrieval_attempt IS NULL OR last_payload_retrieval_attempt < $1) ORDER BY activated_at_epoch ASC LIMIT $2"
-  return await loadDeals(pgPool, query, [now, maxDeals])
+  return await loadDeals(pgPool, query, [now.toISOString(), maxDeals])
 }
 
+/**
+ * @param {Queryable} pgPool
+ * @returns {Promise<number>}
+ */
 export async function countStoredActiveDealsWithUnresolvedPayloadCid (pgPool) {
   const query = 'SELECT COUNT(*) FROM active_deals WHERE payload_cid IS NULL'
   const result = await pgPool.query(query)
@@ -70,7 +75,7 @@ export async function countRevertedActiveDeals (pgPool) {
  * @param {Static<typeof ActiveDealDbEntry>} deal
  * @param {Static< typeof PayloadRetrievabilityStateType>} newPayloadRetrievalState
  * @param {Date} lastRetrievalAttemptTimestamp
- * @param {string} newPayloadCid
+ * @param {string | undefined} newPayloadCid
  * @returns { Promise<void>}
  */
 async function updatePayloadCidInActiveDeal (pgPool, deal, newPayloadRetrievalState, lastRetrievalAttemptTimestamp, newPayloadCid) {

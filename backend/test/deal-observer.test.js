@@ -119,6 +119,11 @@ describe('deal-observer-backend', () => {
   })
 
   it('check number of reverted stored deals', async () => {
+    /**
+     * @param {Static<typeof ClaimEvent>} eventData
+     * @param {boolean} reverted
+     * @returns {Promise<void>}
+     */
     const storeBlockEvent = async (eventData, reverted) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted })
       const dbEntry = convertBlockEventToActiveDealDbEntry(event)
@@ -154,13 +159,19 @@ describe('deal-observer-backend', () => {
 })
 
 describe('deal-observer-backend built in actor event observer', () => {
+  /**
+   * @type {PgPool}
+   */
   let pgPool
+  /**
+   * @type {import('../lib/typings.js').MakeRpcRequest}
+   */
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
         return parse(JSON.stringify(chainHeadTestData))
       case 'Filecoin.GetActorEventsRaw':
-        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
       default:
         console.error('Unknown method')
     }
@@ -188,6 +199,7 @@ describe('deal-observer-backend built in actor event observer', () => {
     let deals = await loadDeals(pgPool, 'SELECT * FROM active_deals')
     assert.strictEqual(deals.length, 25)
     const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
+    assert(lastInsertedDeal !== null)
     assert.strictEqual(lastInsertedDeal.activated_at_epoch, 4622129)
 
     // The deal observer function should pick up from the current storage

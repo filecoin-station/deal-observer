@@ -11,7 +11,7 @@ import { countStoredActiveDealsWithUnresolvedPayloadCid, resolvePayloadCids, cou
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { payloadCidRequest } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
-/** @import {MakeRpcRequest, GetDealPayloadCid} from '../lib/typings.js' */
+/** @import {MakeRpcRequest, MakePayloadCidRequest} from '../lib/typings.d.ts' */
 
 const {
   INFLUXDB_TOKEN,
@@ -123,7 +123,7 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
 
 /**
  * @param {MakeRpcRequest} makeRpcRequest
- * @param {GetDealPayloadCid} getDealPayloadCid
+ * @param {MakePayloadCidRequest} makePayloadCidRequest
  * @param {Queryable} pgPool
  */
 export const resolvePayloadCidsLoop = async (makeRpcRequest, makePayloadCidRequest, pgPool) => {

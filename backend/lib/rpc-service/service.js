@@ -4,16 +4,16 @@ import { encode as cborEncode } from '@ipld/dag-cbor'
 import { rawEventEntriesToEvent } from './utils.js'
 import { Value } from '@sinclair/typebox/value'
 import * as util from 'node:util'
-import { ClaimEvent, RawActorEvent, BlockEvent, RpcRespone, ChainHead } from './data-types.js'
+import { ClaimEvent, RawActorEvent, BlockEvent, RpcResponse, ChainHead } from './data-types.js'
 import pRetry from 'p-retry'
 
 /** @import { Static } from '@sinclair/typebox' */
-/** @import {MakeRpcRequest} from '../typings.js' */
+/** @import {MakeRpcRequest} from '../typings.d.ts' */
 
 /**
  * @param {string} method
- * @param {Object} params
- * @returns {Promise<object>}
+ * @param {unknown} params
+ * @returns {Promise<unknown>}
  */
 export const rpcRequest = async (method, params) => {
   const reqBody = JSON.stringify({ method, params, id: 1, jsonrpc: '2.0' })
@@ -32,7 +32,7 @@ export const rpcRequest = async (method, params) => {
     }
     const json = await response.json()
     try {
-      const parsedRpcResponse = Value.Parse(RpcRespone, json).result
+      const parsedRpcResponse = Value.Parse(RpcResponse, json).result
       return parsedRpcResponse
     } catch (error) {
       throw Error(util.format('Failed to parse RPC response: %o', json), { cause: error })
