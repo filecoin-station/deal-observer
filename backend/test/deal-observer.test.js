@@ -142,8 +142,8 @@ describe('deal-observer-backend', () => {
   })
   it('simultaneously processes claims for a piece stored twice in the same sector', async () => {
     const storeDeal = async (events) => {
-      const dbEntries = events.map(data => {
-        const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06' })
+      const dbEntries = events.map(eventData => {
+        const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
         return convertBlockEventToActiveDealDbEntry(event)
       })
       await storeActiveDeals(dbEntries, pgPool)
