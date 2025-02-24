@@ -22,7 +22,7 @@ export const resolvePayloadCids = async (makeRpcRequest, makePayloadCidRequest, 
   for (const deal of await fetchDealsWithUnresolvedPayloadCid(pgPool, maxDeals, new Date(now - THREE_DAYS_IN_MILLISECONDS))) {
     const minerPeerId = await getMinerPeerId(deal.miner_id, makeRpcRequest)
     const payloadCid = await makePayloadCidRequest(minerPeerId, deal.piece_cid)
-    deal.payload_cid = payloadCid !== null ? payloadCid : undefined
+    if (payloadCid) deal.payload_cid = payloadCid
     if (!deal.payload_cid) {
       if (deal.last_payload_retrieval_attempt) {
         deal.payload_retrievability_state = PayloadRetrievabilityState.TerminallyUnretrievable
