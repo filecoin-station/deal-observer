@@ -110,6 +110,63 @@ describe('deal-observer-backend', () => {
     assert.strictEqual(await countStoredActiveDeals(pgPool), 2n)
   })
 
+  it('serially processes claims for a piece stored twice in the same sector', async () => {
+    const storeDeal = async (eventData) => {
+      const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
+      const dbEntry = convertBlockEventToActiveDealDbEntry(event)
+      await storeActiveDeals([dbEntry], pgPool)
+    }
+    const eventData = {
+      id: 1,
+      provider: 2,
+      client: 3,
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
+      pieceSize: 4n,
+      termStart: 5,
+      termMin: 12340,
+      termMax: 12340,
+      sector: 6n,
+      payload_cid: undefined,
+      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      last_payload_retrieval_attempt: undefined
+    }
+    await storeDeal(eventData)
+    let actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    assert.strictEqual(actual.length, 1)
+    // If we only change the id, the unique constraint which does not include the id will prevent the insertion
+    // This test verifies that `storeDeal` handles such situation by ignoring the duplicate deal record
+    eventData.id = 2
+    await storeDeal(eventData)
+    actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    assert.strictEqual(actual.length, 1)
+  })
+  it('simultaneously processes claims for a piece stored twice in the same sector', async () => {
+    const storeDeal = async (events) => {
+      const dbEntries = events.map(eventData => {
+        const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted: false })
+        return convertBlockEventToActiveDealDbEntry(event)
+      })
+      await storeActiveDeals(dbEntries, pgPool)
+    }
+    const eventData = {
+      id: 1,
+      provider: 2,
+      client: 3,
+      pieceCid: 'baga6ea4seaqc4z4432snwkztsadyx2rhoa6rx3wpfzu26365wvcwlb2wyhb5yfi',
+      pieceSize: 4n,
+      termStart: 5,
+      termMin: 12340,
+      termMax: 12340,
+      sector: 6n,
+      payload_cid: undefined,
+      payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+      last_payload_retrieval_attempt: undefined
+    }
+    await storeDeal([eventData, { ...eventData, id: 2 }])
+    const actual = await loadDeals(pgPool, 'SELECT * FROM active_deals')
+    // Only one of the events will be stored in the database
+    assert.strictEqual(actual.length, 1)
+  })
   it('check number of reverted stored deals', async () => {
     const storeBlockEvent = async (eventData, reverted) => {
       const event = Value.Parse(BlockEvent, { height: 1, event: eventData, emitter: 'f06', reverted })
