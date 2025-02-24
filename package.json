@@ -28,7 +28,7 @@
   "homepage": "https://github.com/filecoin-station/deal-observer#readme",
   "devDependencies": {
     "@types/pg": "^8.11.11",
-    "prettier": "^3.5.1",
+    "prettier": "^3.5.2",
     "standard": "^17.1.2",
     "typescript": "^5.7.3"
   }
