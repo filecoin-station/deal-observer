@@ -18,7 +18,7 @@ export const observeBuiltinActorEvents = async (pgPool, makeRpcRequest, maxPastE
   const lastInsertedDeal = await fetchDealWithHighestActivatedEpoch(pgPool)
   const startEpoch = Math.max(
     currentChainHead.Height - maxPastEpochs,
-    ((lastInsertedDeal?.activated_at_epoch ?? -1) + 1) || 0
+    (lastInsertedDeal?.activated_at_epoch ?? -1) + 1
   )
   const endEpoch = currentChainHead.Height - finalityEpochs
   for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
