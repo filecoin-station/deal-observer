@@ -1,5 +1,5 @@
 /** @import { BlockEvent } from './rpc-service/data-types.js' */
-import { ActiveDealDbEntry } from '@filecoin-station/deal-observer-db/lib/types.js'
+import { ActiveDealDbEntry, PayloadRetrievabilityState } from '@filecoin-station/deal-observer-db/lib/types.js'
 import { Value } from '@sinclair/typebox/value'
 /** @import { Static } from '@sinclair/typebox' */
 
@@ -19,6 +19,9 @@ export function convertBlockEventToActiveDealDbEntry (blockEvent) {
     term_min: blockEvent.event.termMin,
     term_max: blockEvent.event.termMax,
     sector_id: blockEvent.event.sector,
-    payload_cid: undefined
+    payload_cid: undefined,
+    payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
+    last_payload_retrieval_attempt: undefined,
+    reverted: blockEvent.reverted
   })
 }
