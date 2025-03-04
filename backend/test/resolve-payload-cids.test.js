@@ -126,7 +126,8 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       sector_id: 1,
       payload_cid: undefined,
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
-      last_payload_retrieval_attempt: undefined
+      last_payload_retrieval_attempt: undefined,
+      reverted: false
     })
 
     await storeActiveDeals([deal], pgPool)
@@ -164,7 +165,8 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       sector_id: 1,
       payload_cid: undefined,
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
-      last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4)
+      last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4),
+      reverted: false
     })
 
     await storeActiveDeals([deal], pgPool)
@@ -203,7 +205,8 @@ describe('deal-observer-backend piece indexer payload retrieval', () => {
       sector_id: 1,
       payload_cid: undefined,
       payload_retrievability_state: PayloadRetrievabilityState.NotQueried,
-      last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4)
+      last_payload_retrieval_attempt: new Date(now - 1000 * 60 * 60 * 24 * 4),
+      reverted: false
     })
 
     await storeActiveDeals([deal], pgPool)
