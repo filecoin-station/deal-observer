@@ -12,18 +12,30 @@ import { ActiveDeal, PayloadRetrievabilityState } from '@filecoin-station/deal-o
 import { countStoredActiveDealsWithUnresolvedPayloadCid, resolvePayloadCids } from '../lib/resolve-payload-cids.js'
 
 describe('deal-observer-backend resolve payload CIDs', () => {
+  /**
+   * @type {import('../lib/typings.d.ts').MakeRpcRequest}
+   * */
   const makeRpcRequest = async (method, params) => {
     switch (method) {
       case 'Filecoin.ChainHead':
         return parse(JSON.stringify(chainHeadTestData))
-      case 'Filecoin.GetActorEventsRaw':
-        return parse(JSON.stringify(rawActorEventTestData)).filter(e => e.height >= params[0].fromHeight && e.height <= params[0].toHeight)
+      case 'Filecoin.GetActorEventsRaw': {
+        assert(typeof params[0] === 'object' && params[0], 'params[0] must be an object')
+        const filter = /** @type {{fromHeight: number; toHeight: number}} */(params[0])
+        assert(typeof filter.fromHeight === 'number', 'filter.fromHeight must be a number')
+        assert(typeof filter.toHeight === 'number', 'filter.toHeight must be a number')
+        return parse(JSON.stringify(rawActorEventTestData)).filter((/** @type {{ height: number; }} */ e) => e.height >= filter.fromHeight && e.height <= filter.toHeight)
+      }
       case 'Filecoin.StateMinerInfo':
+        assert(typeof params[0] === 'string', 'params[0] must be a string')
         return minerPeerIds.get(params[0])
       default:
         console.error('Unknown method')
     }
   }
+  /**
+   * @type {import('@filecoin-station/deal-observer-db').PgPool}}
+   *  */
   let pgPool
   before(async () => {
     pgPool = await createPgPool()
@@ -49,17 +61,20 @@ describe('deal-observer-backend resolve payload CIDs', () => {
 
   it('piece indexer loop function fetches deals where there exists no payload yet and updates the database entry', async (t) => {
     const resolvePayloadCidCalls = []
-    const resolvePayloadCid = async (providerId, pieceCid) => {
+    /**
+     * @type {import('../lib/typings.d.ts').MakePayloadCidRequest}
+     * */
+    const makePayloadCidRequest = async (providerId, pieceCid) => {
       resolvePayloadCidCalls.push({ providerId, pieceCid })
       const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
-      return payloadCid?.payloadCid
+      return payloadCid ? payloadCid.payloadCid : null
     }
 
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
       336
     )
-    await resolvePayloadCids(makeRpcRequest, resolvePayloadCid, pgPool, 10000)
+    await resolvePayloadCids(makeRpcRequest, makePayloadCidRequest, pgPool, 10000)
     assert.strictEqual(resolvePayloadCidCalls.length, 336)
     assert.strictEqual(
       (await pgPool.query('SELECT * FROM active_deals WHERE payload_cid IS NULL')).rows.length,
@@ -71,10 +86,13 @@ describe('deal-observer-backend resolve payload CIDs', () => {
     let unresolvedPayloadCids = await countStoredActiveDealsWithUnresolvedPayloadCid(pgPool)
     assert.strictEqual(unresolvedPayloadCids, 336n)
     const resolvePayloadCidCalls = []
+    /**
+     * @type {import('../lib/typings.d.ts').MakePayloadCidRequest}
+     * */
     const resolvePayloadCid = async (providerId, pieceCid) => {
       resolvePayloadCidCalls.push({ providerId, pieceCid })
       const payloadCid = payloadCIDs.get(JSON.stringify({ minerId: providerId, pieceCid }))
-      return payloadCid?.payloadCid
+      return payloadCid ? payloadCid.payloadCid : null
     }
 
     await resolvePayloadCids(makeRpcRequest, resolvePayloadCid, pgPool, 10000)
@@ -84,6 +102,9 @@ describe('deal-observer-backend resolve payload CIDs', () => {
 })
 
 describe('deal-observer-backend piece indexer payload retrieval', () => {
+  /**
+   * @type {import('@filecoin-station/deal-observer-db').PgPool}
+   */
   let pgPool
   const payloadCid = 'PAYLOAD_CID'
   const minerPeerId = 'MINER_PEER_ID'

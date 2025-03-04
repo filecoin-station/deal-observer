@@ -11,6 +11,7 @@ import { countStoredActiveDealsWithUnresolvedPayloadCid, resolvePayloadCids, cou
 import { findAndSubmitUnsubmittedDeals, submitDealsToSparkApi } from '../lib/spark-api-submit-deals.js'
 import { payloadCidRequest } from '../lib/piece-indexer-service.js'
 /** @import {Queryable} from '@filecoin-station/deal-observer-db' */
+/** @import {MakeRpcRequest, MakePayloadCidRequest} from '../lib/typings.d.ts' */
 
 const {
   INFLUXDB_TOKEN,
@@ -37,6 +38,10 @@ assert(finalityEpochs <= maxPastEpochs)
 const pgPool = await createPgPool()
 const { recordTelemetry } = createInflux(INFLUXDB_TOKEN)
 
+/**
+ * @param {MakeRpcRequest} makeRpcRequest
+ * @param {Queryable} pgPool
+ */
 const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
   while (true) {
     const start = Date.now()
@@ -47,7 +52,7 @@ const observeActorEventsLoop = async (makeRpcRequest, pgPool) => {
       const numberOfRevertedActiveDeals = await countRevertedActiveDeals(pgPool)
       if (INFLUXDB_TOKEN) {
         recordTelemetry('observed_deals_stats', point => {
-          point.intField('last_searched_epoch', newLastInsertedDeal.activated_at_epoch)
+          point.intField('last_searched_epoch', newLastInsertedDeal?.activated_at_epoch ?? 0)
           point.intField('number_of_stored_active_deals', numberOfStoredDeals)
           point.intField('number_of_reverted_active_deals', numberOfRevertedActiveDeals)
         })
@@ -116,6 +121,11 @@ const sparkApiSubmitDealsLoop = async (pgPool, { sparkApiBaseUrl, sparkApiToken,
   }
 }
 
+/**
+ * @param {MakeRpcRequest} makeRpcRequest
+ * @param {MakePayloadCidRequest} makePayloadCidRequest
+ * @param {Queryable} pgPool
+ */
 export const resolvePayloadCidsLoop = async (makeRpcRequest, makePayloadCidRequest, pgPool) => {
   while (true) {
     const start = Date.now()
